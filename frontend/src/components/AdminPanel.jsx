@@ -441,6 +441,7 @@ function RuteCrud({ onChanged }) {
           onChange={setPicker}
           onReset={() => setPicker(null)}
           referenceLineString={refLineString}
+          referenceColor={form.warna_peta}
           height={420}
         />
 

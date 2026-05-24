@@ -40,6 +40,15 @@ serta **snap-to-road via OSRM** saat menambah rute baru.
 > menggunakan **raw SQL via SQLAlchemy `text()`** tanpa GeoAlchemy2. Seeding
 > bukan lagi via file `.sql` melainkan **otomatis dari GeoJSON** saat startup
 > FastAPI.
+>
+> **Catatan v2.1:** Seeder mendukung **OSM fragmented geometry** — rute dari
+> OpenStreetMap biasanya terpotong-potong (puluhan/ratusan LineString per koridor).
+> Seeder mengelompokkan fitur per `kode_trayek`, lalu menggabungkan segmen dengan
+> **`ST_Multi(ST_LineMerge(ST_Collect(...)))`** di level database, menghasilkan
+> satu MultiLineString utuh per rute. Frontend & admin panel menangani keduanya:
+> LineString (dari OSRM CRUD) dan MultiLineString (dari seeder). Kolom geometri
+> berubah ke `GEOMETRY(Geometry, 4326)` untuk menerima kedua tipe tanpa CHECK
+> constraint.
 
 ---
 
@@ -68,19 +77,24 @@ dijalankan, ia akan otomatis memuat 8 rute & 25 halte dari
 > Pastikan ada koneksi internet saat startup pertama. Bila OSRM gagal,
 > seeder fallback ke geometri waypoint mentah dengan peringatan.
 
-### Re-seed (kalau data lama berupa garis lurus)
+### Re-seed (kalau data perlu diperbarui)
 
-Bila Anda sudah menjalankan versi seeder lama (rute tampil sebagai garis
-lurus), jalankan script reseed untuk membersihkan & re-snap via OSRM:
+Untuk membersihkan data lama dan seed ulang dari GeoJSON:
 
 ```powershell
 cd backend
 .\.venv\Scripts\Activate.ps1
-python reseed.py
+python -c "from app.seeder import reseed_all; print(reseed_all())"
 ```
 
-Script ini akan `TRUNCATE` rute & halte lalu seed ulang dengan OSRM. Setelah
-selesai, refresh browser — rute akan mengikuti jalan.
+Script ini akan `TRUNCATE` rute & halte, lalu seed ulang. Seeder akan:
+1. Mengelompokkan OSM features per `kode_trayek`
+2. Menggabungkan segmen LineString terpotong menjadi MultiLineString utuh
+   via `ST_Multi(ST_LineMerge(ST_Collect(...)))`
+3. Menghitung panjang rute aktual dengan `ST_Length(...geography)`
+
+Setelah selesai, restart backend — rute akan ditampilkan dengan geometri
+yang sudah tergabung dan mengikuti jalan raya OSM.
 
 Verifikasi setelah backend dijalankan:
 
@@ -102,10 +116,15 @@ ORDER  BY jarak_m;
 ### Struktur ERD
 
 ```
-rute_trayek (id_rute PK, LineString geom)
+rute_trayek (id_rute PK, Geometry geom — LineString atau MultiLineString)
   │  1:N memiliki
   └──> halte_infrastruktur (id_halte PK, Point geom, FK id_rute_pelintas)
 ```
+
+**Catatan geometri:** Kolom `geometri_jalur` bertipe `GEOMETRY(Geometry, 4326)` tanpa
+CHECK constraint type, sehingga dapat menerima:
+- **LineString** — dari OSRM snap-to-road (admin add/edit rute)
+- **MultiLineString** — dari seeder (OSM fragmented geometry, sudah tergabung)
 
 GIST spatial index pada `geometri_jalur` dan `koordinat_titik`.
 
@@ -130,10 +149,17 @@ Pada log startup, Anda akan melihat:
 
 ```
 INFO main: Menjalankan auto-seeder GeoJSON...
+INFO seeder: Group rute: 8 kode trayek dari 394 fitur (skip 0)
+INFO seeder: [1/8] Menjahit K01 (47 segmen)...
+...
 INFO seeder: Seeder rute: 8 baris dimasukkan.
 INFO seeder: Seeder halte: 25 baris dimasukkan.
 INFO main: Auto-seeder selesai: {'rute': 8, 'halte': 25}
 ```
+
+Seeder membaca `rute.geojson` (394 LineString fragments dari OSM), mengelompokkan
+per `kode_trayek`, lalu menggabung segmen terpotong menjadi MultiLineString utuh
+menggunakan `ST_Multi(ST_LineMerge(ST_Collect(...)))` di level PostGIS.
 
 Buka:
 - Swagger UI: <http://localhost:8000/docs>
@@ -172,23 +198,29 @@ Buka <http://localhost:5173>.
 
 ### Fitur Frontend
 
-- **Map Centric Layout** — OpenStreetMap full screen, sidebar filter 340 px.
-- **Filter Rute** — checkbox per rute + toggle tampilkan halte rusak.
-- **Pencarian Halte Terdekat** — input lat/lng manual atau **Pakai GPS**,
+- **Map Centric Layout** — OpenStreetMap full screen, sidebar tool 340 px.
+- **Pencarian Halte Terdekat** — klik peta untuk menentukan lokasi referensi,
   slider radius 100–5000 m → `GET /api/v1/halte/radius`. Hasil di sidebar +
-  lingkaran biru di peta.
+  lingkaran biru di peta. Tombol **📍 Pakai GPS** untuk geolocation cepat.
+- **Toggle Layer** — checkbox tampilkan/sembunyikan Rute & Halte, filter halte
+  tidak beroperasi.
 - **Popup Detail** — halte (nama, jalan, rute, kondisi) & rute (kode, panjang).
 - **Admin CRUD Halte** — `HaltePicker.jsx`:
   - **Klik peta** di mana saja → marker biru pindah, koordinat otomatis terisi.
   - Tombol **📍 Gunakan Lokasi GPS Saya** → langsung set ke posisi GPS.
   - Overlay rute eksisting ditampilkan transparan agar admin tahu trayek terdekat.
 - **Admin CRUD Rute** — `RutePicker.jsx`:
-  - Klik pertama → **Titik Awal** (marker hijau).
-  - Klik kedua → **Titik Akhir** (marker merah).
-  - Otomatis memanggil **OSRM** `https://router.project-osrm.org/route/v1/driving/...`
-    → menerima GeoJSON LineString **yang mengikuti jalan raya** (snap-to-road).
-  - Polyline biru tebal ditampilkan + estimasi panjang km dihitung haversine.
-  - Tombol Simpan mengirim LineString utuh ke `POST /api/v1/rute`.
+  - **Tambah rute (create):** Klik pertama → **Titik Awal** (marker hijau).
+    Klik kedua → **Titik Akhir** (marker merah). Dapat klik lagi untuk menambah
+    waypoint tengah. Otomatis memanggil **OSRM multi-waypoint snap-to-road** → 
+    menerima GeoJSON LineString yang mengikuti jalan raya.
+  - **Edit rute (update):** Garis geometri existing ditampilkan dengan warna rute
+    (dari `warna_peta`). Admin dapat menggambar ulang rute atau biarkan kosong
+    untuk skip update geometri. Mendukung baik LineString (OSRM) maupun MultiLineString
+    (seeder).
+  - Polyline biru tebal ditampilkan + estimasi panjang km.
+  - Tombol Simpan mengirim LineString ke `POST /api/v1/rute` (create) atau 
+    `PUT /api/v1/rute/{id}` (update).
 
 ---
 
@@ -240,8 +272,15 @@ SIG_TUBES/
   `ST_SetSRID(ST_MakePoint(...))`). GeoAlchemy2 tidak diperlukan.
 - **Auto-seed idempoten**: seeder mengecek `COUNT(*)` lebih dulu — kalau tabel
   sudah berisi data, ia melompat. Restart backend aman.
-- **OSRM**: memakai server publik `router.project-osrm.org` (rate-limited).
-  Untuk produksi, pertimbangkan self-host OSRM atau gunakan alternatif seperti
-  `leaflet-routing-machine` dengan plugin OSRM/GraphHopper.
+- **OSM fragmented geometry handling**: Seeder mengelompokkan fitur OSM per `kode_trayek`
+  (fallback ke `ref`, `name`, `@id`), lalu menggabungkan LineString terpotong dengan
+  `ST_Multi(ST_LineMerge(ST_Collect(...)))`. Kolom `geometri_jalur` generik
+  `GEOMETRY(Geometry, 4326)` tanpa CHECK, menerima LineString atau MultiLineString.
+  Frontend components (`RutePicker`, `HaltePicker`) mendeteksi dan render keduanya.
+- **OSRM**: memakai server publik `router.project-osrm.org` (rate-limited) untuk
+  snap-to-road multi-waypoint. Admin dapat klik beberapa kali untuk menambah waypoint.
+  Untuk produksi, pertimbangkan self-host OSRM atau alternatif.
 - **GeoJSON konvensi**: koordinat `[longitude, latitude]` (bukan lat,lng).
   Konversi ke Leaflet `[lat, lng]` dilakukan saat render.
+- **Promise.allSettled()**: Frontend menggunakan `allSettled` bukan `all` saat
+  reload data, agar satu endpoint gagal tidak menggagalkan seluruh data load.

@@ -1,22 +1,45 @@
 """
 Auto-seed PostGIS dari berkas GeoJSON di backend/data/.
 
-Saat seeding rute, koordinat waypoint dari rute.geojson dikirim ke OSRM
-(https://router.project-osrm.org) untuk **snap-to-road** — geometri yang
-disimpan ke database mengikuti jalan raya valid, bukan garis lurus.
+Strategi rute (HANDLE OSM FRAGMENTED):
+  Satu koridor rute biasanya tersebar di puluhan/ratusan fitur LineString
+  yang terpotong-potong (hasil ekstrak OpenStreetMap). Seeder ini:
 
-Jika OSRM tidak tersedia / gagal, fallback ke geometri waypoint mentah
-agar seeding tetap berjalan.
+    1.  Membaca semua fitur dari rute.geojson.
+    2.  MENGELOMPOKKAN fitur berdasarkan properti `kode_trayek`
+        (atau fallback `name`/`ref`/`@id`) menjadi satu grup per koridor.
+    3.  Untuk tiap grup, mengirim semua geometri LineString ke PostgreSQL
+        sebagai jsonb array, lalu DI-DATABASE-LEVEL menjahit segmen
+        melalui:
 
-Idempoten: hanya seed tabel yang masih kosong.
+            ST_Multi(
+              ST_LineMerge(
+                ST_Collect(
+                  ST_SetSRID(ST_GeomFromGeoJSON(elem::text), 4326)
+                )
+              )
+            )
+
+        - `ST_Collect`  : kumpulkan segmen jadi geometry collection
+        - `ST_LineMerge`: jahit segmen yang ujung-ujungnya bertemu
+        - `ST_Multi`    : pastikan hasil akhir bertipe MultiLineString
+                          (single row per koridor)
+
+    4.  Hasilnya: SATU baris MultiLineString utuh per kode trayek.
+
+Strategi halte: insert standar `ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)`.
+
+Idempoten: hanya seed bila tabel kosong.
 """
 from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 import urllib.error
 import urllib.request
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any
 
@@ -27,14 +50,23 @@ from .database import SessionLocal
 
 logger = logging.getLogger("seeder")
 
-DATA_DIR   = Path(__file__).resolve().parent.parent / "data"
-RUTE_FILE  = DATA_DIR / "rute.geojson"
-HALTE_FILE = DATA_DIR / "halte.geojson"
+DATA_DIR    = Path(__file__).resolve().parent.parent / "data"
+RUTE_FILE   = DATA_DIR / "rute.geojson"
+HALTE_FILE  = DATA_DIR / "halte.geojson"
 
-OSRM_BASE  = "https://router.project-osrm.org/route/v1/driving"
+OSRM_BASE   = "https://router.project-osrm.org/route/v1/driving"
+
+# Palette default bila feature tidak punya warna_peta
+COLOR_PALETTE = [
+    "#E53935", "#1E88E5", "#43A047", "#FB8C00", "#8E24AA",
+    "#00ACC1", "#6D4C41", "#7CB342", "#3949AB", "#F4511E",
+    "#00897B", "#5E35B1", "#039BE5", "#D81B60", "#C0CA33",
+]
 
 
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# Helpers
+# ===========================================================================
 def _load_geojson(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         logger.warning("Berkas GeoJSON tidak ditemukan: %s", path)
@@ -44,33 +76,43 @@ def _load_geojson(path: Path) -> list[dict[str, Any]]:
     return data.get("features", [])
 
 
+def _slug(s: str, maxlen: int = 10) -> str:
+    """Sanitasi string jadi kode pendek (a-z0-9 + underscore)."""
+    s = re.sub(r"[^A-Za-z0-9]+", "_", str(s)).strip("_").upper()
+    return s[:maxlen] or "RUTE"
+
+
+def _grouping_key(props: dict) -> str | None:
+    """Cari properti grup; prioritas kode_trayek → ref → name → @id."""
+    for k in ("kode_trayek", "ref", "name", "@id"):
+        v = props.get(k)
+        if v:
+            return str(v)
+    return None
+
+
 def osrm_snap_to_road(coordinates: list[list[float]], timeout: int = 25) -> dict | None:
-    """
-    Kirim list koordinat [[lng,lat], ...] sebagai waypoint ke OSRM public API.
-    Mengembalikan GeoJSON LineString yang sudah snap-to-road, atau None bila gagal.
-    """
+    """OSRM public API: snap urutan waypoint ke jalan raya valid."""
     if len(coordinates) < 2:
         return None
     coord_str = ";".join(f"{lng},{lat}" for lng, lat in coordinates)
     url = f"{OSRM_BASE}/{coord_str}?overview=full&geometries=geojson"
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "WebGIS-TMP-Pekanbaru/2.1"})
+        req = urllib.request.Request(url, headers={"User-Agent": "WebGIS-TMP-Pekanbaru/3.0"})
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         if not data.get("routes"):
-            logger.warning("OSRM: tidak ada rute untuk %d waypoint", len(coordinates))
             return None
         return data["routes"][0]["geometry"]
-    except urllib.error.URLError as e:
-        logger.warning("OSRM URLError: %s", e)
-    except Exception as e:
+    except (urllib.error.URLError, Exception) as e:
         logger.warning("OSRM exception: %s", e)
-    return None
+        return None
 
 
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# Rute seeding — fragmented merge
+# ===========================================================================
 def _seed_rute(db: Session) -> int:
-    """Insert seluruh rute dari rute.geojson — pakai OSRM snap-to-road bila bisa."""
     count = db.execute(text("SELECT COUNT(*) FROM rute_trayek")).scalar()
     if count and count > 0:
         logger.info("rute_trayek sudah berisi %s baris — skip seeding rute.", count)
@@ -80,45 +122,88 @@ def _seed_rute(db: Session) -> int:
     if not features:
         return 0
 
-    inserted = 0
-    for idx, feat in enumerate(features, start=1):
-        props    = feat.get("properties", {})
-        raw_geom = feat.get("geometry")
-        if not raw_geom or raw_geom.get("type") != "LineString":
+    # ----------- GROUP fitur per kode trayek -----------
+    groups: dict[str, dict] = OrderedDict()
+    skipped = 0
+    for feat in features:
+        props = feat.get("properties", {}) or {}
+        geom  = feat.get("geometry")
+        if not geom:
+            skipped += 1
+            continue
+        gtype = geom.get("type")
+        if gtype not in ("LineString", "MultiLineString"):
+            skipped += 1
             continue
 
-        kode = props.get("kode_trayek", "?")
-        logger.info("[%d/%d] Snap-to-road %s via OSRM (%d waypoint)...",
-                    idx, len(features), kode, len(raw_geom["coordinates"]))
+        key = _grouping_key(props)
+        if not key:
+            skipped += 1
+            continue
 
-        snapped = osrm_snap_to_road(raw_geom["coordinates"])
-        if snapped:
-            logger.info("       OK · %d titik geometri terhasil",
-                        len(snapped["coordinates"]))
+        if key not in groups:
+            groups[key] = {"props": dict(props), "geometries": []}
         else:
-            logger.warning("       OSRM gagal — fallback ke geometri waypoint mentah")
+            # merge property baru ke yang sudah ada (first-non-null win)
+            for k, v in props.items():
+                if v and not groups[key]["props"].get(k):
+                    groups[key]["props"][k] = v
 
-        final_geom = snapped or raw_geom
+        groups[key]["geometries"].append(geom)
 
-        db.execute(text("""
-            INSERT INTO rute_trayek
-                (kode_trayek, nama_trayek, titik_awal, titik_akhir,
-                 warna_peta, geometri_jalur)
-            VALUES
-                (:kode, :nama, :awal, :akhir, :warna,
-                 ST_SetSRID(ST_GeomFromGeoJSON(:geom), 4326))
-            ON CONFLICT (kode_trayek) DO NOTHING
-        """), {
-            "kode":  kode,
-            "nama":  props["nama_trayek"],
-            "awal":  props["titik_awal"],
-            "akhir": props["titik_akhir"],
-            "warna": props.get("warna_peta", "#3388ff"),
-            "geom":  json.dumps(final_geom),
-        })
-        inserted += 1
-        time.sleep(0.6)  # jeda kecil supaya tidak memukul OSRM public API
+    logger.info("Group rute: %d kode trayek dari %d fitur (skip %d)",
+                len(groups), len(features), skipped)
 
+    inserted = 0
+    for idx, (key, info) in enumerate(groups.items()):
+        props = info["props"]
+        geoms = info["geometries"]
+
+        kode  = props.get("kode_trayek") or _slug(key)
+        nama  = props.get("nama_trayek") or props.get("name") or props.get("ref") or kode
+        awal  = props.get("titik_awal")
+        akhir = props.get("titik_akhir")
+        warna = props.get("warna_peta") or COLOR_PALETTE[idx % len(COLOR_PALETTE)]
+
+        # Kirim list geometri sebagai jsonb array; gabungkan di sisi PostGIS
+        geoms_json = json.dumps(geoms)
+
+        logger.info("[%d/%d] Menjahit %s (%d segmen)...",
+                    idx + 1, len(groups), kode, len(geoms))
+
+        try:
+            db.execute(text("""
+                INSERT INTO rute_trayek
+                    (kode_trayek, nama_trayek, titik_awal, titik_akhir,
+                     warna_peta, geometri_jalur)
+                SELECT
+                    :kode, :nama, :awal, :akhir, :warna, merged_geom
+                FROM (
+                    SELECT ST_Multi(
+                              ST_LineMerge(
+                                ST_Collect(
+                                  ST_SetSRID(ST_GeomFromGeoJSON(elem::text), 4326)
+                                )
+                              )
+                           ) AS merged_geom
+                    FROM jsonb_array_elements(CAST(:geoms AS jsonb)) AS elem
+                ) sub
+                ON CONFLICT (kode_trayek) DO NOTHING
+            """), {
+                "kode":  kode[:10],
+                "nama":  nama[:150],
+                "awal":  awal,
+                "akhir": akhir,
+                "warna": warna,
+                "geoms": geoms_json,
+            })
+            inserted += 1
+        except Exception as exc:
+            db.rollback()
+            logger.warning("Gagal insert rute %s: %s", kode, exc)
+            continue
+
+    # Hitung panjang aktual (km) dari geometri tergabung
     db.execute(text("""
         UPDATE rute_trayek
         SET    panjang_km = ROUND((ST_Length(geometri_jalur::geography)/1000.0)::numeric, 2)
@@ -129,6 +214,9 @@ def _seed_rute(db: Session) -> int:
     return inserted
 
 
+# ===========================================================================
+# Halte seeding — standard point insert
+# ===========================================================================
 def _seed_halte(db: Session) -> int:
     count = db.execute(text("SELECT COUNT(*) FROM halte_infrastruktur")).scalar()
     if count and count > 0:
@@ -141,11 +229,17 @@ def _seed_halte(db: Session) -> int:
 
     inserted = 0
     for feat in features:
-        props = feat.get("properties", {})
+        props = feat.get("properties", {}) or {}
         geom  = feat.get("geometry")
         if not geom or geom.get("type") != "Point":
             continue
 
+        coords = geom.get("coordinates", [])
+        if len(coords) < 2:
+            continue
+        lng, lat = coords[0], coords[1]
+
+        # Map kode_trayek → id_rute (FK)
         kode = props.get("kode_trayek")
         id_rute = None
         if kode:
@@ -153,20 +247,28 @@ def _seed_halte(db: Session) -> int:
                 "SELECT id_rute FROM rute_trayek WHERE kode_trayek = :k"
             ), {"k": kode}).scalar()
 
+        # Normalisasi nilai kondisi lama → baru
+        kondisi = props.get("kondisi_fisik", "Beroperasi")
+        if kondisi in ("Baik",):
+            kondisi = "Beroperasi"
+        elif kondisi in ("Rusak", "Terbengkalai"):
+            kondisi = "Tidak Beroperasi"
+
         db.execute(text("""
             INSERT INTO halte_infrastruktur
                 (id_rute_pelintas, nama_halte, nama_jalan, kondisi_fisik,
                  keterangan, koordinat_titik)
             VALUES
                 (:id_rute, :nama, :jalan, :kondisi, :keterangan,
-                 ST_SetSRID(ST_GeomFromGeoJSON(:geom), 4326))
+                 ST_SetSRID(ST_MakePoint(:lng, :lat), 4326))
         """), {
             "id_rute":    id_rute,
-            "nama":       props["nama_halte"],
+            "nama":       props.get("nama_halte", "Halte"),
             "jalan":      props.get("nama_jalan"),
-            "kondisi":    props.get("kondisi_fisik", "Baik"),
+            "kondisi":    kondisi,
             "keterangan": props.get("keterangan"),
-            "geom":       json.dumps(geom),
+            "lng":        lng,
+            "lat":        lat,
         })
         inserted += 1
 
@@ -175,6 +277,9 @@ def _seed_halte(db: Session) -> int:
     return inserted
 
 
+# ===========================================================================
+# Entry points
+# ===========================================================================
 def run_seeders() -> dict[str, int]:
     db: Session = SessionLocal()
     try:
@@ -190,22 +295,16 @@ def run_seeders() -> dict[str, int]:
 
 
 def reseed_all() -> dict[str, int]:
-    """
-    Hapus seluruh data rute & halte lalu seed ulang dengan OSRM snap-to-road.
-    Dipanggil via CLI: `python -m app.reseed` atau script `reseed.py`.
-    """
     db: Session = SessionLocal()
     try:
-        logger.info("RESEED: TRUNCATE rute_trayek CASCADE (juga membersihkan halte)...")
+        logger.info("RESEED: TRUNCATE halte_infrastruktur, rute_trayek...")
         db.execute(text("TRUNCATE halte_infrastruktur, rute_trayek RESTART IDENTITY CASCADE"))
         db.commit()
     finally:
         db.close()
-    logger.info("RESEED: menjalankan run_seeders() dengan OSRM...")
     return run_seeders()
 
 
 if __name__ == "__main__":
-    # CLI mode: python -m app.seeder
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     print("Reseed:", reseed_all())

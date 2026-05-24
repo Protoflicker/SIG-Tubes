@@ -56,17 +56,40 @@ function projectOntoSegment(p, a, b) {
   };
 }
 
-/** Cari titik terdekat di LineString [[lng,lat], ...] dari titik p. */
-function snapToLineString(p, coordinates) {
-  let bestDist = Infinity, bestPt = null;
-  for (let i = 0; i < coordinates.length - 1; i++) {
-    const a = { lng: coordinates[i][0],   lat: coordinates[i][1] };
-    const b = { lng: coordinates[i+1][0], lat: coordinates[i+1][1] };
-    const c = projectOntoSegment(p, a, b);
-    const d = metersBetween(p, c);
-    if (d < bestDist) { bestDist = d; bestPt = c; }
+/** Iterasi semua array koordinat LineString dari geometri (LineString
+ *  atau MultiLineString) dan jalankan callback per array segmen. */
+function forEachLineString(geometry, cb) {
+  if (!geometry) return;
+  if (geometry.type === "LineString") {
+    cb(geometry.coordinates);
+  } else if (geometry.type === "MultiLineString") {
+    for (const line of geometry.coordinates) cb(line);
   }
+}
+
+/** Cari titik terdekat di geometri dari titik p. Mendukung
+ *  LineString maupun MultiLineString. */
+function snapToGeometry(p, geometry) {
+  let bestDist = Infinity, bestPt = null;
+  forEachLineString(geometry, (coords) => {
+    for (let i = 0; i < coords.length - 1; i++) {
+      const a = { lng: coords[i][0],   lat: coords[i][1] };
+      const b = { lng: coords[i+1][0], lat: coords[i+1][1] };
+      const c = projectOntoSegment(p, a, b);
+      const d = metersBetween(p, c);
+      if (d < bestDist) { bestDist = d; bestPt = c; }
+    }
+  });
   return { point: bestPt, distance: bestDist };
+}
+
+/** Konversi geometri (Line/MultiLine) ke array array-of-[lat,lng] siap-pakai Polyline. */
+function geometryToPolylines(geometry) {
+  const out = [];
+  forEachLineString(geometry, (coords) => {
+    out.push(coords.map(([lng, lat]) => [lat, lng]));
+  });
+  return out;
 }
 
 // ---------- Komponen anak react-leaflet ----------
@@ -83,13 +106,17 @@ function Recentre({ position }) {
   return null;
 }
 
-function FitToLineString({ lineString }) {
+function FitToGeometry({ geometry }) {
   const map = useMap();
   useEffect(() => {
-    if (!lineString?.coordinates?.length) return;
-    const bounds = L.latLngBounds(lineString.coordinates.map(([lng, lat]) => [lat, lng]));
-    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
-  }, [lineString, map]);
+    if (!geometry) return;
+    const allLatLngs = [];
+    forEachLineString(geometry, (coords) => {
+      for (const [lng, lat] of coords) allLatLngs.push([lat, lng]);
+    });
+    if (allLatLngs.length === 0) return;
+    map.fitBounds(L.latLngBounds(allLatLngs), { padding: [40, 40], maxZoom: 15 });
+  }, [geometry, map]);
   return null;
 }
 
@@ -127,7 +154,7 @@ export default function HaltePicker({
       onChange(pt);
       return;
     }
-    const { point, distance } = snapToLineString(pt, restrictGeom.coordinates);
+    const { point, distance } = snapToGeometry(pt, restrictGeom);
     if (distance > TOLERANSI_METER) {
       showWarning(
         `Klik berada ${Math.round(distance)} m dari rute ${restrictMeta?.kode_trayek || ""}. ` +
@@ -214,17 +241,18 @@ export default function HaltePicker({
             />
           )}
 
-          {/* Halo putih tebal untuk rute terpilih supaya benar-benar menonjol */}
-          {restrictGeom && (
+          {/* Halo biru tebal untuk rute terpilih supaya benar-benar menonjol */}
+          {restrictGeom && geometryToPolylines(restrictGeom).map((positions, i) => (
             <Polyline
-              positions={restrictGeom.coordinates.map(([lng, lat]) => [lat, lng])}
+              key={`halo-${i}`}
+              positions={positions}
               pathOptions={{ color: "#3b82f6", weight: 14, opacity: 0.25 }}
             />
-          )}
+          ))}
 
           <ClickHandler onClick={handlePoint} />
           <Recentre position={value} />
-          {restrictGeom && <FitToLineString lineString={restrictGeom} />}
+          {restrictGeom && <FitToGeometry geometry={restrictGeom} />}
 
           {value && <Marker position={[value.lat, value.lng]} icon={blueIcon} />}
         </MapContainer>

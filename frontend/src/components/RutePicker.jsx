@@ -40,13 +40,28 @@ function ClickHandler({ onClick }) {
   return null;
 }
 
-function FitToReference({ lineString }) {
+/** Konversi geometri (LineString / MultiLineString) ke array of [lat,lng]
+ *  array-of-arrays untuk Polyline. */
+function geometryToPolylines(geometry) {
+  if (!geometry) return [];
+  if (geometry.type === "LineString") {
+    return [geometry.coordinates.map(([lng, lat]) => [lat, lng])];
+  }
+  if (geometry.type === "MultiLineString") {
+    return geometry.coordinates.map((line) => line.map(([lng, lat]) => [lat, lng]));
+  }
+  return [];
+}
+
+function FitToReference({ geometry }) {
   const map = useMap();
   useEffect(() => {
-    if (!lineString?.coordinates?.length) return;
-    const bounds = L.latLngBounds(lineString.coordinates.map(([lng, lat]) => [lat, lng]));
-    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
-  }, [lineString, map]);
+    if (!geometry) return;
+    const allLatLngs = [];
+    for (const ls of geometryToPolylines(geometry)) allLatLngs.push(...ls);
+    if (allLatLngs.length === 0) return;
+    map.fitBounds(L.latLngBounds(allLatLngs), { padding: [40, 40], maxZoom: 15 });
+  }, [geometry, map]);
   return null;
 }
 
@@ -66,6 +81,7 @@ async function osrmRouteMulti(waypoints) {
 export default function RutePicker({
   value, onChange, onReset, height = 420,
   referenceLineString = null,    // geometri rute existing (mode edit)
+  referenceColor    = "#1e3a8a", // warna highlight referensi (default biru)
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr]   = useState(null);
@@ -174,16 +190,22 @@ export default function RutePicker({
           />
           <ClickHandler onClick={handleMapClick} />
 
-          {/* Reference geometry (mode edit) — abu-abu putus-putus */}
+          {/* Reference geometry (mode edit) — warna mengikuti warna_peta */}
           {referenceLineString && (
-            <>
-              <FitToReference lineString={referenceLineString} />
-              <Polyline
-                positions={referenceLineString.coordinates.map(([lng, lat]) => [lat, lng])}
-                pathOptions={{ color: "#6b7280", weight: 4, opacity: 0.6, dashArray: "8 6" }}
-              />
-            </>
+            <FitToReference geometry={referenceLineString} />
           )}
+          {referenceLineString && geometryToPolylines(referenceLineString).map((positions, i) => (
+            <Polyline
+              key={`ref-${i}`}
+              positions={positions}
+              pathOptions={{
+                color: referenceColor,
+                weight: 5,
+                opacity: 0.7,
+                dashArray: "8 6",
+              }}
+            />
+          ))}
 
           {/* Marker AWAL — hanya 1 */}
           {startPoint && (

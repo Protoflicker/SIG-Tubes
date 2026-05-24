@@ -130,30 +130,6 @@ export default function Sidebar({
         </label>
       </div>
 
-      {/* ===== Filter per-rute ===== */}
-      <div className="card">
-        <h2><IconRoute size={14} /> Filter Rute TMP ({ruteList.length})</h2>
-        <label className="checkbox-row">
-          <input type="checkbox" checked={allChecked}
-                 onChange={(e) => onToggleAll(e.target.checked)} />
-          <span><b>Semua Rute</b></span>
-        </label>
-        <div style={{ borderTop: "1px solid #e5e7eb", margin: "6px 0" }} />
-        {ruteList.map((r) => (
-          <label key={r.id_rute} className="checkbox-row">
-            <input type="checkbox"
-                   checked={selectedRute.has(r.id_rute)}
-                   onChange={() => onToggleRute(r.id_rute)} />
-            <span className="swatch" style={{ background: r.warna_peta }} />
-            <span>{r.kode_trayek} · {r.titik_awal} – {r.titik_akhir}</span>
-          </label>
-        ))}
-      </div>
-
-      <div className="card" style={{ fontSize: ".72rem", color: "#6b7280" }}>
-        Backend: FastAPI sinkron + PostGIS (raw SQL).
-        Snap-to-road via OSRM saat menambah rute baru.
-      </div>
     </aside>
   );
 }

@@ -33,7 +33,10 @@ CREATE TABLE rute_trayek (
     titik_akhir         VARCHAR(100),
     warna_peta          VARCHAR(7)   NOT NULL DEFAULT '#3388ff',
     panjang_km          NUMERIC(6,2),
-    geometri_jalur      GEOMETRY(LineString, 4326) NOT NULL,
+    -- Geometry generik (LineString atau MultiLineString) supaya seeder
+    -- bisa MERGE banyak segmen OSM via ST_Multi(ST_LineMerge(ST_Collect(...)))
+    -- sementara CRUD admin (RutePicker via OSRM) tetap insert LineString.
+    geometri_jalur      GEOMETRY(Geometry, 4326) NOT NULL,
     created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
