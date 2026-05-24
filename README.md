@@ -35,27 +35,9 @@ serta **snap-to-road via OSRM** saat menambah rute baru.
 | Backend  | FastAPI **sinkron** · SQLAlchemy 2 (raw SQL) · Pydantic v2 | [backend/](backend) |
 | Frontend | React 18 · Vite 5 · react-leaflet 4 · OSRM API      | [frontend/](frontend) |
 
-> **Catatan v2.0:** entitas **Armada** dihapus. Entitas **Koridor** diganti
-> menjadi **Rute** (tabel `rute_trayek`, endpoint `/api/v1/rute`). Backend
-> menggunakan **raw SQL via SQLAlchemy `text()`** tanpa GeoAlchemy2. Seeding
-> bukan lagi via file `.sql` melainkan **otomatis dari GeoJSON** saat startup
-> FastAPI.
->
-> **Catatan v2.1:** Seeder mendukung **OSM fragmented geometry** — rute dari
-> OpenStreetMap biasanya terpotong-potong (puluhan/ratusan LineString per koridor).
-> Seeder mengelompokkan fitur per `kode_trayek`, lalu menggabungkan segmen dengan
-> **`ST_Multi(ST_LineMerge(ST_Collect(...)))`** di level database, menghasilkan
-> satu MultiLineString utuh per rute. Frontend & admin panel menangani keduanya:
-> LineString (dari OSRM CRUD) dan MultiLineString (dari seeder). Kolom geometri
-> berubah ke `GEOMETRY(Geometry, 4326)` untuk menerima kedua tipe tanpa CHECK
-> constraint.
-
 ---
 
 ## 1. Setup Database (PostGIS)
-
-> **Jika sebelumnya sudah membuat DB versi lama (ada tabel `armada_bus_tmp` / `koridor_trayek`),
-> drop dulu lalu buat baru — schema kolom berubah.**
 
 ```powershell
 $env:PGPASSWORD = "PASSWORD_ANDA"
@@ -70,12 +52,6 @@ psql -U postgres -d sig_tmp_pekanbaru -f database/01_schema.sql
 Itu saja — **tidak perlu menjalankan file seed SQL**. Saat backend pertama kali
 dijalankan, ia akan otomatis memuat 8 rute & 25 halte dari
 `backend/data/rute.geojson` dan `backend/data/halte.geojson` ke PostGIS.
-
-> ** Penting — OSRM Snap-to-Road saat seeding:**
-> Seeder akan memanggil OSRM public API untuk setiap rute, supaya geometri
-> yang disimpan **mengikuti jalan raya** (bukan garis lurus antar landmark).
-> Pastikan ada koneksi internet saat startup pertama. Bila OSRM gagal,
-> seeder fallback ke geometri waypoint mentah dengan peringatan.
 
 ### Re-seed (kalau data perlu diperbarui)
 
@@ -120,11 +96,6 @@ rute_trayek (id_rute PK, Geometry geom — LineString atau MultiLineString)
   │  1:N memiliki
   └──> halte_infrastruktur (id_halte PK, Point geom, FK id_rute_pelintas)
 ```
-
-**Catatan geometri:** Kolom `geometri_jalur` bertipe `GEOMETRY(Geometry, 4326)` tanpa
-CHECK constraint type, sehingga dapat menerima:
-- **LineString** — dari OSRM snap-to-road (admin add/edit rute)
-- **MultiLineString** — dari seeder (OSM fragmented geometry, sudah tergabung)
 
 GIST spatial index pada `geometri_jalur` dan `koordinat_titik`.
 
