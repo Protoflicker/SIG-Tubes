@@ -1,0 +1,132 @@
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  color: #1f2937;
+}
+
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; }
+
+/* ===== Layout ===== */
+.app {
+  display: grid;
+  grid-template-rows: 56px 1fr;
+  height: 100vh;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  background: #1e3a8a;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.topbar h1 { font-size: 1.05rem; margin: 0; font-weight: 600; }
+.topbar .tag { font-size: 0.75rem; background: #f59e0b; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+.topbar .nav { display: flex; gap: 8px; }
+.topbar .nav button {
+  background: transparent; color: white; border: 1px solid rgba(255,255,255,0.4);
+  padding: 6px 12px; border-radius: 6px; font-size: 0.85rem;
+}
+.topbar .nav button.active { background: white; color: #1e3a8a; font-weight: 600; }
+
+.body {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  overflow: hidden;
+}
+
+.sidebar {
+  background: #f8fafc;
+  border-right: 1px solid #e5e7eb;
+  overflow-y: auto;
+  padding: 16px;
+}
+.sidebar h2 { font-size: 0.85rem; text-transform: uppercase; color: #6b7280; margin: 0 0 8px 0; letter-spacing: 0.5px; }
+.sidebar .card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.sidebar label { display: block; font-size: 0.8rem; margin-bottom: 4px; color: #374151; }
+.sidebar input[type=text],
+.sidebar input[type=number],
+.sidebar select,
+.sidebar textarea {
+  width: 100%; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px;
+  font-size: 0.85rem; margin-bottom: 8px;
+}
+.sidebar input[type=range] { width: 100%; }
+.sidebar .btn {
+  display: inline-block; padding: 8px 14px; border-radius: 6px; border: 0;
+  background: #1e3a8a; color: white; font-weight: 600; font-size: 0.85rem;
+}
+.sidebar .btn:hover { background: #1e40af; }
+.sidebar .btn-secondary { background: #6b7280; }
+.sidebar .btn-danger    { background: #dc2626; }
+.sidebar .btn:disabled  { background: #9ca3af; cursor: not-allowed; }
+
+.checkbox-row {
+  display: flex; align-items: center; gap: 8px; padding: 4px 0;
+  font-size: 0.85rem; cursor: pointer;
+}
+.checkbox-row .swatch {
+  width: 14px; height: 4px; border-radius: 2px; display: inline-block;
+}
+
+.map-area { position: relative; }
+.leaflet-container { width: 100%; height: 100%; }
+
+.legend {
+  position: absolute; bottom: 16px; right: 16px; z-index: 1000;
+  background: white; padding: 10px 12px; border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-size: 0.78rem;
+}
+.legend h3 { margin: 0 0 6px; font-size: 0.78rem; text-transform: uppercase; color: #6b7280; }
+.legend .item { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+/* ===== Popup styling ===== */
+.popup-row { font-size: 0.85rem; line-height: 1.4; }
+.popup-row b { color: #1e3a8a; }
+.badge {
+  display: inline-block; padding: 1px 6px; border-radius: 4px;
+  font-size: 0.7rem; font-weight: 600;
+}
+.badge-baik         { background: #dcfce7; color: #166534; }
+.badge-rusak        { background: #fef3c7; color: #92400e; }
+.badge-terbengkalai { background: #fee2e2; color: #991b1b; }
+
+.result-list { list-style: none; padding: 0; margin: 0; }
+.result-list li {
+  padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 0.83rem;
+}
+.result-list li:last-child { border-bottom: 0; }
+.result-list .muted { color: #6b7280; font-size: 0.75rem; }
+
+/* ===== Admin panel ===== */
+.admin {
+  padding: 20px; overflow: auto; background: #f8fafc; height: 100%;
+}
+.admin h2 { margin-top: 0; }
+.admin table {
+  width: 100%; border-collapse: collapse; background: white;
+  font-size: 0.85rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden;
+}
+.admin th, .admin td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+.admin th { background: #f1f5f9; font-weight: 600; }
+.admin .actions { display: flex; gap: 4px; }
+.admin .actions button {
+  padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; border: 0; color: white;
+}
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.form-grid .full { grid-column: 1 / -1; }
