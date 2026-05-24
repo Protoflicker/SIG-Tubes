@@ -4,7 +4,7 @@ import HaltePicker from "./HaltePicker.jsx";
 import RutePicker  from "./RutePicker.jsx";
 import {
   IconBus, IconRoute, IconRefresh, IconBarChart, IconXCircle, IconAlert,
-  IconEdit, IconTrash, IconPlus, IconRuler,
+  IconEdit, IconTrash, IconPlus, IconRuler, IconLoader,
 } from "./Icons.jsx";
 
 export default function AdminPanel({ onChanged }) {
