@@ -32,7 +32,6 @@ export const api = {
   createRute:      (body)   => request("/rute",       { method: "POST",   body: JSON.stringify(body) }),
   updateRute:      (id, b)  => request(`/rute/${id}`, { method: "PUT",    body: JSON.stringify(b) }),
   deleteRute:      (id)     => request(`/rute/${id}`, { method: "DELETE" }),
-  snapAllRute:     ()       => request("/rute/snap-all", { method: "POST" }),
 
   // ===== Halte =====
   listHalte:       (p = {}) => request(buildUrl("/halte", p)),
