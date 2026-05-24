@@ -1,13 +1,13 @@
 # WebGIS Sistem Informasi Rute Angkutan Umum Pekanbaru
 
-**Mata Kuliah:** Sistem Informasi Geografis (SIG) — Institut Teknologi Sumatera
+**Mata Kuliah:** Sistem Informasi Geografis (SIG) Institut Teknologi Sumatera
 **Kelompok 1 (2026):**
-- Febrian Valentino Nugroho — 123140034
-- Anselmus Herpin Hasugian — 123140020
-- Adi Septriansyah — 123140021
-- Jonathan Nicholaus Damero Sinaga — 123140153
+- Febrian Valentino Nugroho 123140034
+- Anselmus Herpin Hasugian 123140020
+- Adi Septriansyah 123140021
+- Jonathan Nicholaus Damero Sinaga 123140153
 
-Implementasi WebGIS *full-stack* untuk **Trans Metro Pekanbaru (TMP)** —
+Implementasi WebGIS *full-stack* untuk **Trans Metro Pekanbaru (TMP)** 
 memetakan 8 **rute** BRT, 25 **halte** beserta status fisik, pencarian halte
 terdekat (ST_DWithin), dan admin panel CRUD dengan **klik peta untuk koordinat**
 serta **snap-to-road via OSRM** saat menambah rute baru.
@@ -49,7 +49,7 @@ createdb -U postgres sig_tmp_pekanbaru
 psql -U postgres -d sig_tmp_pekanbaru -f database/01_schema.sql
 ```
 
-Itu saja — **tidak perlu menjalankan file seed SQL**. Saat backend pertama kali
+Itu saja  **tidak perlu menjalankan file seed SQL**. Saat backend pertama kali
 dijalankan, ia akan otomatis memuat 8 rute & 25 halte dari
 `backend/data/rute.geojson` dan `backend/data/halte.geojson` ke PostGIS.
 
@@ -69,7 +69,7 @@ Script ini akan `TRUNCATE` rute & halte, lalu seed ulang. Seeder akan:
    via `ST_Multi(ST_LineMerge(ST_Collect(...)))`
 3. Menghitung panjang rute aktual dengan `ST_Length(...geography)`
 
-Setelah selesai, restart backend — rute akan ditampilkan dengan geometri
+Setelah selesai, restart backend  rute akan ditampilkan dengan geometri
 yang sudah tergabung dan mengikuti jalan raya OSM.
 
 Verifikasi setelah backend dijalankan:
@@ -92,7 +92,7 @@ ORDER  BY jarak_m;
 ### Struktur ERD
 
 ```
-rute_trayek (id_rute PK, Geometry geom — LineString atau MultiLineString)
+rute_trayek (id_rute PK, Geometry geom  LineString atau MultiLineString)
   │  1:N memiliki
   └──> halte_infrastruktur (id_halte PK, Point geom, FK id_rute_pelintas)
 ```
@@ -141,7 +141,7 @@ Buka:
 | Method | Path                                          | Deskripsi |
 |-------:|-----------------------------------------------|-----------|
 | GET    | `/api/v1/halte`                               | List halte (filter `kondisi`, `id_rute`) |
-| GET    | `/api/v1/halte/radius?lat&lng&radius`         | **ST_DWithin** — halte dalam radius (m) |
+| GET    | `/api/v1/halte/radius?lat&lng&radius`         | **ST_DWithin**  halte dalam radius (m) |
 | GET    | `/api/v1/halte/geojson`                       | FeatureCollection halte |
 | GET    | `/api/v1/halte/{id}`                          | Detail halte |
 | POST   | `/api/v1/halte`                               | Tambah halte (validasi Pydantic) |
@@ -169,18 +169,18 @@ Buka <http://localhost:5173>.
 
 ### Fitur Frontend
 
-- **Map Centric Layout** — OpenStreetMap full screen, sidebar tool 340 px.
-- **Pencarian Halte Terdekat** — klik peta untuk menentukan lokasi referensi,
+- **Map Centric Layout**  OpenStreetMap full screen, sidebar tool 340 px.
+- **Pencarian Halte Terdekat**  klik peta untuk menentukan lokasi referensi,
   slider radius 100–5000 m → `GET /api/v1/halte/radius`. Hasil di sidebar +
   lingkaran biru di peta. Tombol ** Pakai GPS** untuk geolocation cepat.
-- **Toggle Layer** — checkbox tampilkan/sembunyikan Rute & Halte, filter halte
+- **Toggle Layer**  checkbox tampilkan/sembunyikan Rute & Halte, filter halte
   tidak beroperasi.
-- **Popup Detail** — halte (nama, jalan, rute, kondisi) & rute (kode, panjang).
-- **Admin CRUD Halte** — `HaltePicker.jsx`:
+- **Popup Detail**  halte (nama, jalan, rute, kondisi) & rute (kode, panjang).
+- **Admin CRUD Halte**  `HaltePicker.jsx`:
   - **Klik peta** di mana saja → marker biru pindah, koordinat otomatis terisi.
   - Tombol ** Gunakan Lokasi GPS Saya** → langsung set ke posisi GPS.
   - Overlay rute eksisting ditampilkan transparan agar admin tahu trayek terdekat.
-- **Admin CRUD Rute** — `RutePicker.jsx`:
+- **Admin CRUD Rute**  `RutePicker.jsx`:
   - **Tambah rute (create):** Klik pertama → **Titik Awal** (marker hijau).
     Klik kedua → **Titik Akhir** (marker merah). Dapat klik lagi untuk menambah
     waypoint tengah. Otomatis memanggil **OSRM multi-waypoint snap-to-road** → 
