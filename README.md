@@ -1,4 +1,4 @@
-# 🚌 WebGIS Sistem Informasi Rute Angkutan Umum Pekanbaru
+# WebGIS Sistem Informasi Rute Angkutan Umum Pekanbaru
 
 **Mata Kuliah:** Sistem Informasi Geografis (SIG) — Institut Teknologi Sumatera
 **Kelompok 1 (2026):**
@@ -14,7 +14,7 @@ serta **snap-to-road via OSRM** saat menambah rute baru.
 
 ---
 
-## 🧱 Arsitektur
+## Arsitektur
 
 ```
 ┌──────────────┐    HTTP/JSON    ┌──────────────┐   Raw SQL/PostGIS  ┌──────────────┐
@@ -52,7 +52,7 @@ serta **snap-to-road via OSRM** saat menambah rute baru.
 
 ---
 
-## 🗃️ 1. Setup Database (PostGIS)
+## 1. Setup Database (PostGIS)
 
 > **Jika sebelumnya sudah membuat DB versi lama (ada tabel `armada_bus_tmp` / `koridor_trayek`),
 > drop dulu lalu buat baru — schema kolom berubah.**
@@ -71,7 +71,7 @@ Itu saja — **tidak perlu menjalankan file seed SQL**. Saat backend pertama kal
 dijalankan, ia akan otomatis memuat 8 rute & 25 halte dari
 `backend/data/rute.geojson` dan `backend/data/halte.geojson` ke PostGIS.
 
-> **🔑 Penting — OSRM Snap-to-Road saat seeding:**
+> ** Penting — OSRM Snap-to-Road saat seeding:**
 > Seeder akan memanggil OSRM public API untuk setiap rute, supaya geometri
 > yang disimpan **mengikuti jalan raya** (bukan garis lurus antar landmark).
 > Pastikan ada koneksi internet saat startup pertama. Bila OSRM gagal,
@@ -130,7 +130,7 @@ GIST spatial index pada `geometri_jalur` dan `koordinat_titik`.
 
 ---
 
-## 🐍 2. Setup Backend (FastAPI sinkron, raw SQL)
+## 2. Setup Backend (FastAPI sinkron, raw SQL)
 
 ```powershell
 cd backend
@@ -186,7 +186,7 @@ Buka:
 
 ---
 
-## ⚛️ 3. Setup Frontend (React + Vite + Leaflet + OSRM)
+## 3. Setup Frontend (React + Vite + Leaflet + OSRM)
 
 ```powershell
 cd frontend
@@ -201,13 +201,13 @@ Buka <http://localhost:5173>.
 - **Map Centric Layout** — OpenStreetMap full screen, sidebar tool 340 px.
 - **Pencarian Halte Terdekat** — klik peta untuk menentukan lokasi referensi,
   slider radius 100–5000 m → `GET /api/v1/halte/radius`. Hasil di sidebar +
-  lingkaran biru di peta. Tombol **📍 Pakai GPS** untuk geolocation cepat.
+  lingkaran biru di peta. Tombol ** Pakai GPS** untuk geolocation cepat.
 - **Toggle Layer** — checkbox tampilkan/sembunyikan Rute & Halte, filter halte
   tidak beroperasi.
 - **Popup Detail** — halte (nama, jalan, rute, kondisi) & rute (kode, panjang).
 - **Admin CRUD Halte** — `HaltePicker.jsx`:
   - **Klik peta** di mana saja → marker biru pindah, koordinat otomatis terisi.
-  - Tombol **📍 Gunakan Lokasi GPS Saya** → langsung set ke posisi GPS.
+  - Tombol ** Gunakan Lokasi GPS Saya** → langsung set ke posisi GPS.
   - Overlay rute eksisting ditampilkan transparan agar admin tahu trayek terdekat.
 - **Admin CRUD Rute** — `RutePicker.jsx`:
   - **Tambah rute (create):** Klik pertama → **Titik Awal** (marker hijau).
@@ -224,7 +224,7 @@ Buka <http://localhost:5173>.
 
 ---
 
-## 📁 Struktur Folder
+## Struktur Folder
 
 ```
 SIG_TUBES/
@@ -265,7 +265,7 @@ SIG_TUBES/
 
 ---
 
-## 🔗 Catatan Teknis
+## Catatan Teknis
 
 - **Raw SQL only**: setiap router menggunakan `db.execute(text("..."))` untuk
   mengeksekusi kueri spasial PostGIS (`ST_DWithin`, `ST_Distance`, `ST_AsGeoJSON`,
