@@ -5,7 +5,7 @@
 - Febrian Valentino Nugroho 123140034
 - Anselmus Herpin Hasugian 123140020
 - Adi Septriansyah 123140021
-- Jonathan Nicholaus Damero Sinaga 123140153
+- Jonathan Nicholaus Damero Sinaga 123140153.
 
 Implementasi WebGIS *full-stack* untuk **Trans Metro Pekanbaru (TMP)** 
 memetakan 8 **rute** BRT, 25 **halte** beserta status fisik, pencarian halte
