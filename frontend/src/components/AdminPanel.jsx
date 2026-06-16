@@ -12,55 +12,43 @@ export default function AdminPanel({ onChanged }) {
 
   return (
     <div className="admin">
-      <h2>Panel Administrasi CRUD</h2>
-      <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-        <button onClick={() => setTab("halte")} style={btnStyle(tab === "halte")}>
-          <IconBus size={14} /> Halte
+      <div className="admin-header">
+        <h2>Panel Administrasi</h2>
+        <p>Kelola data Halte dan Rute Trans Metro Pekanbaru</p>
+      </div>
+
+      <div className="admin-tabs">
+        <button 
+          onClick={() => setTab("halte")} 
+          className={`admin-tab-btn ${tab === "halte" ? "active" : ""}`}
+        >
+          <IconBus size={16} /> Halte
         </button>
-        <button onClick={() => setTab("rute")}  style={btnStyle(tab === "rute")}>
-          <IconRoute size={14} /> Rute
+        <button 
+          onClick={() => setTab("rute")}  
+          className={`admin-tab-btn ${tab === "rute" ? "active" : ""}`}
+        >
+          <IconRoute size={16} /> Rute
         </button>
       </div>
 
-      {tab === "halte"
-        ? <HalteCrud onChanged={onChanged} />
-        : <RuteCrud  onChanged={onChanged} />}
+      <div className="admin-content">
+        {tab === "halte"
+          ? <HalteCrud onChanged={onChanged} />
+          : <RuteCrud  onChanged={onChanged} />}
+      </div>
     </div>
   );
 }
 
-function btnStyle(active) {
-  return {
-    background: active ? "#f59e0b" : "#1a1a1a",
-    color: active ? "#1a1a1a" : "#e0e0e0", 
-    padding: "8px 14px", 
-    border: 0, 
-    borderRadius: 12, 
-    fontWeight: 600,
-    display: "inline-flex", 
-    alignItems: "center", 
-    gap: 6,
-    boxShadow: active 
-      ? "inset 4px 4px 8px rgba(0, 0, 0, 0.5), inset -4px -4px 8px rgba(40, 40, 40, 0.1)"
-      : "6px 6px 12px rgba(0, 0, 0, 0.6), -6px -6px 12px rgba(40, 40, 40, 0.1)",
-  };
-}
-
 function RefreshButton({ onClick, loading }) {
   return (
-    <button type="button" onClick={onClick} disabled={loading}
-      style={{
-        background: "#1a1a1a", 
-        color: "#10b981", 
-        border: 0,
-        padding: "6px 12px", 
-        borderRadius: 12, 
-        fontSize: ".85rem",
-        display: "inline-flex", 
-        alignItems: "center", 
-        gap: 5,
-        boxShadow: "6px 6px 12px rgba(0, 0, 0, 0.6), -6px -6px 12px rgba(40, 40, 40, 0.1)",
-      }}>
+    <button 
+      type="button" 
+      onClick={onClick} 
+      disabled={loading}
+      className="admin-action-btn success"
+    >
       {loading ? <IconLoader size={14} /> : <IconRefresh size={14} />}
       {loading ? "Memuat..." : "Refresh"}
     </button>
@@ -70,34 +58,19 @@ function RefreshButton({ onClick, loading }) {
 function ErrorBox({ error, onRetry }) {
   if (!error) return null;
   return (
-    <div style={{
-      background: "#1a1a1a", 
-      color: "#ef4444", 
-      padding: 12, 
-      borderRadius: 12,
-      marginBottom: 12, 
-      fontSize: ".85rem",
-      boxShadow: "inset 4px 4px 8px rgba(0, 0, 0, 0.5), inset -4px -4px 8px rgba(40, 40, 40, 0.1)",
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+    <div className="admin-error-box">
+      <div className="error-content">
         <IconXCircle size={16} /> <b>Error memuat data:</b> {error}
       </div>
-      <button onClick={onRetry} style={{
-        marginTop: 8, 
-        background: "#1a1a1a", 
-        color: "#ef4444", 
-        border: 0,
-        padding: "6px 12px", 
-        borderRadius: 10, 
-        fontSize: ".85rem",
-        boxShadow: "4px 4px 8px rgba(0, 0, 0, 0.5), -4px -4px 8px rgba(40, 40, 40, 0.1)",
-      }}>Coba Ulang</button>
+      <button onClick={onRetry} className="admin-action-btn danger">
+        Coba Ulang
+      </button>
     </div>
   );
 }
 
 // ============================================================
-// CRUD HALTE — form simple + restrict to selected rute
+// CRUD HALTE
 // ============================================================
 function HalteCrud({ onChanged }) {
   const [halteList, setHalteList] = useState([]);
@@ -130,13 +103,6 @@ function HalteCrud({ onChanged }) {
     setLoading(false);
   }
   useEffect(() => { reload(); }, []);
-
-  // Saat rute dipilih berubah, validasi koord existing — jika di luar rute baru,
-  // hapus koord supaya admin sadar harus klik ulang.
-  useEffect(() => {
-    if (!coords || !form.id_rute_pelintas) return;
-    // Tidak otomatis hapus, biarkan admin lihat efek pemilihan rute baru.
-  }, [form.id_rute_pelintas]);
 
   function onEdit(h) {
     setEditing(h.id_halte);
@@ -177,42 +143,35 @@ function HalteCrud({ onChanged }) {
     catch (err) { alert(err.message); }
   }
 
-  const restrictToRuteId = form.id_rute_pelintas
-    ? parseInt(form.id_rute_pelintas, 10)
-    : null;
+  const restrictToRuteId = form.id_rute_pelintas ? parseInt(form.id_rute_pelintas, 10) : null;
 
   return (
     <div className="admin-grid-layout">
       <div className="admin-left-col">
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <h3 style={{ margin: 0 }}>
-            {editing ? <><IconEdit size={16} /> Edit Halte #{editing}</> : <><IconPlus size={16} /> Tambah Halte Baru</>}
+        <div className="admin-section-header">
+          <h3>
+            {editing 
+              ? <><IconEdit size={18} /> Edit Halte #{editing}</> 
+              : <><IconPlus size={18} /> Tambah Halte Baru</>}
           </h3>
-          <span style={{
-            background: "#1a1a1a", 
-            color: "#f59e0b", 
-            padding: "4px 10px",
-            borderRadius: 12, 
-            fontSize: ".8rem", 
-            display: "inline-flex", 
-            alignItems: "center", 
-            gap: 4,
-            boxShadow: "inset 3px 3px 6px rgba(0, 0, 0, 0.4), inset -3px -3px 6px rgba(40, 40, 40, 0.05)",
-          }}>
-            <IconBarChart size={12} /> Rute: <b>{ruteList.length}</b> · Halte: <b>{halteList.length}</b>
-          </span>
-          <RefreshButton onClick={reload} loading={loading} />
+          <div className="admin-header-actions">
+            <span className="admin-stat-badge">
+              <IconBarChart size={14} /> Rute: <b>{ruteList.length}</b> · Halte: <b>{halteList.length}</b>
+            </span>
+            <RefreshButton onClick={reload} loading={loading} />
+          </div>
         </div>
 
         <ErrorBox error={error} onRetry={reload} />
 
-        <form onSubmit={onSubmit} style={{ background: "var(--bg-secondary)", padding: 16, borderRadius: 16, marginTop: 12, marginBottom: 16, boxShadow: "var(--shadow-outer)" }}>
-          {/* Pilih rute DULU supaya picker tahu restriksi */}
-          <div style={{ marginBottom: 10 }}>
-            <label style={{ color: "var(--text-secondary)", fontSize: ".8rem", display: "block", marginBottom: 4 }}><b>Rute</b> ({ruteList.length} tersedia)</label>
-            <select style={{ width: "100%", padding: 8, background: "var(--bg-secondary)", color: "var(--text-primary)", border: "none", borderRadius: 10, boxShadow: "var(--shadow-inner)" }}
+        <form onSubmit={onSubmit} className="admin-form-card">
+          <div className="form-group">
+            <label className="admin-form-label">Tautkan ke Rute (Opsional)</label>
+            <select 
+              className="admin-form-input"
               value={form.id_rute_pelintas}
-              onChange={(e) => setForm({ ...form, id_rute_pelintas: e.target.value })}>
+              onChange={(e) => setForm({ ...form, id_rute_pelintas: e.target.value })}
+            >
               <option value="">— Tanpa rute (bebas klik di mana saja) —</option>
               {ruteList.map((r) => (
                 <option key={r.id_rute} value={r.id_rute}>
@@ -222,95 +181,103 @@ function HalteCrud({ onChanged }) {
             </select>
           </div>
 
-          <div className="form-grid" style={{ marginTop: 12 }}>
-            <div className="full">
-              <label style={{ color: "var(--text-secondary)", fontSize: ".8rem", display: "block", marginBottom: 4 }}>Nama Halte</label>
-              <input style={{ width: "100%", padding: 8, background: "var(--bg-secondary)", color: "var(--text-primary)", border: "none", borderRadius: 10, boxShadow: "var(--shadow-inner)" }} required
+          <div className="form-grid">
+            <div className="full form-group">
+              <label className="admin-form-label">Nama Halte</label>
+              <input 
+                required 
+                className="admin-form-input"
+                placeholder="Contoh: Halte Sudirman 1"
                 value={form.nama_halte}
-                onChange={(e) => setForm({ ...form, nama_halte: e.target.value })} />
+                onChange={(e) => setForm({ ...form, nama_halte: e.target.value })} 
+              />
             </div>
-            <div>
-              <label style={{ color: "var(--text-secondary)", fontSize: ".8rem", display: "block", marginBottom: 4 }}>Kondisi</label>
-              <select style={{ width: "100%", padding: 8, background: "var(--bg-secondary)", color: "var(--text-primary)", border: "none", borderRadius: 10, boxShadow: "var(--shadow-inner)" }}
+            <div className="form-group">
+              <label className="admin-form-label">Kondisi</label>
+              <select 
+                className="admin-form-input"
                 value={form.kondisi_fisik}
-                onChange={(e) => setForm({ ...form, kondisi_fisik: e.target.value })}>
+                onChange={(e) => setForm({ ...form, kondisi_fisik: e.target.value })}
+              >
                 <option value="Beroperasi">Beroperasi</option>
                 <option value="Tidak Beroperasi">Tidak Beroperasi</option>
               </select>
             </div>
-            <div className="full">
-              <label style={{ color: "var(--text-secondary)", fontSize: ".8rem", display: "block", marginBottom: 4 }}>Keterangan</label>
-              <textarea rows={2} style={{ width: "100%", padding: 8, background: "var(--bg-secondary)", color: "var(--text-primary)", border: "none", borderRadius: 10, boxShadow: "var(--shadow-inner)" }}
+            <div className="full form-group">
+              <label className="admin-form-label">Keterangan Tambahan</label>
+              <textarea 
+                rows={2} 
+                className="admin-form-input"
+                placeholder="Catatan..."
                 value={form.keterangan}
-                onChange={(e) => setForm({ ...form, keterangan: e.target.value })} />
+                onChange={(e) => setForm({ ...form, keterangan: e.target.value })} 
+              />
             </div>
           </div>
 
-          <button type="submit"
-            style={{ background: "var(--bg-secondary)", color: "var(--accent-color)", padding: "10px 18px", border: 0, borderRadius: 12, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6, boxShadow: "var(--shadow-outer-sm)" }}>
-            {editing ? <><IconEdit size={14} /> Simpan Perubahan</> : <><IconPlus size={14} /> Tambah Halte</>}
-          </button>
-          {editing && (
-            <button type="button" onClick={onCancel}
-              style={{ marginLeft: 8, background: "var(--bg-secondary)", color: "var(--text-secondary)", padding: "10px 18px", border: 0, borderRadius: 12, display: "inline-flex", alignItems: "center", gap: 6, boxShadow: "var(--shadow-outer-sm)" }}>
-              <IconXCircle size={14} /> Batal
+          <div className="admin-form-actions">
+            <button type="submit" className="admin-btn-primary">
+              {editing ? <><IconEdit size={16} /> Simpan Perubahan</> : <><IconPlus size={16} /> Tambah Halte</>}
             </button>
-          )}
+            {editing && (
+              <button type="button" onClick={onCancel} className="admin-btn-secondary">
+                <IconXCircle size={16} /> Batal
+              </button>
+            )}
+          </div>
         </form>
 
-        <h3>Daftar Halte ({halteList.length})</h3>
+        <div className="admin-table-header">
+          <h3>Daftar Halte Tersimpan ({halteList.length})</h3>
+        </div>
+        
         {halteList.length === 0 ? (
-          <div className="warning-box" style={{
-            padding: 12, 
-            fontSize: ".85rem", 
-            display: "flex", 
-            alignItems: "flex-start", 
-            gap: 8,
-          }}>
-            <IconAlert size={16} />
-            <span>Tabel halte kosong. Klik <b>Refresh</b> atau jalankan migrasi/seeder backend.</span>
+          <div className="warning-box trip-alert warning">
+            <IconAlert size={16} style={{flexShrink:0, marginTop:2}} />
+            <span>Tabel halte kosong. Klik <b>Refresh</b> atau jalankan migrasi backend.</span>
           </div>
         ) : (
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Nama</th><th>Rute</th><th>Kondisi</th><th>Koord</th><th>Aksi</th></tr>
-            </thead>
-            <tbody>
-              {halteList.map((h) => (
-                <tr key={h.id_halte}>
-                  <td>{h.id_halte}</td>
-                  <td>{h.nama_halte}</td>
-                  <td>{h.kode_trayek || <em style={{ color: "#555" }}>—</em>}</td>
-                  <td><span className={`badge badge-${(h.kondisi_fisik || "").toLowerCase().replace(/\s+/g, "-")}`}>{h.kondisi_fisik}</span></td>
-                  <td style={{ fontFamily: "monospace", fontSize: ".75rem" }}>
-                    {h.latitude.toFixed(5)}, {h.longitude.toFixed(5)}
-                  </td>
-                  <td>
-                    <div className="actions">
-                      <button onClick={() => onEdit(h)} style={{ 
-                        background: "#1a1a1a", 
-                        color: "#3b82f6",
-                        display: "inline-flex", 
-                        alignItems: "center", 
-                        gap: 3 
-                      }}>
-                        <IconEdit size={12} /> Edit
-                      </button>
-                      <button onClick={() => onDelete(h.id_halte)} style={{ 
-                        background: "#1a1a1a", 
-                        color: "#ef4444",
-                        display: "inline-flex", 
-                        alignItems: "center", 
-                        gap: 3 
-                      }}>
-                        <IconTrash size={12} /> Hapus
-                      </button>
-                    </div>
-                  </td>
+          <div className="admin-table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nama Halte</th>
+                  <th>Rute</th>
+                  <th>Kondisi</th>
+                  <th>Koordinat</th>
+                  <th>Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {halteList.map((h) => (
+                  <tr key={h.id_halte} className={editing === h.id_halte ? "editing-row" : ""}>
+                    <td>{h.id_halte}</td>
+                    <td><strong>{h.nama_halte}</strong></td>
+                    <td>{h.kode_trayek || <span className="text-muted">—</span>}</td>
+                    <td>
+                      <span className={`badge badge-${(h.kondisi_fisik || "").toLowerCase().replace(/\s+/g, "-")}`}>
+                        {h.kondisi_fisik}
+                      </span>
+                    </td>
+                    <td className="coord-cell">
+                      {h.latitude.toFixed(5)}, {h.longitude.toFixed(5)}
+                    </td>
+                    <td>
+                      <div className="actions">
+                        <button onClick={() => onEdit(h)} className="admin-table-action edit">
+                          <IconEdit size={14} /> Edit
+                        </button>
+                        <button onClick={() => onDelete(h.id_halte)} className="admin-table-action delete">
+                          <IconTrash size={14} /> Hapus
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
       
@@ -328,18 +295,18 @@ function HalteCrud({ onChanged }) {
 }
 
 // ============================================================
-// CRUD RUTE — multi-waypoint snap-to-road + Edit mode
+// CRUD RUTE
 // ============================================================
 function RuteCrud({ onChanged }) {
   const [list, setList]       = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
 
-  const empty = { kode_trayek: "", nama_trayek: "", warna_peta: "#3388ff" };
+  const empty = { kode_trayek: "", nama_trayek: "", warna_peta: "#3b82f6" };
   const [form, setForm]     = useState(empty);
   const [picker, setPicker] = useState(null);
-  const [editing, setEditing] = useState(null);                  // id_rute | null
-  const [refLineString, setRefLineString] = useState(null);      // geometri existing (mode edit)
+  const [editing, setEditing] = useState(null);
+  const [refLineString, setRefLineString] = useState(null);
 
   async function reload() {
     setLoading(true); setError(null);
@@ -376,9 +343,7 @@ function RuteCrud({ onChanged }) {
 
   async function onSubmit(e) {
     e.preventDefault();
-
     if (editing) {
-      // Mode edit: geometri opsional
       const payload = { ...form };
       if (picker?.lineString) payload.geometri_jalur = picker.lineString;
       try {
@@ -388,7 +353,6 @@ function RuteCrud({ onChanged }) {
         onChanged?.();
       } catch (err) { alert(err.message); }
     } else {
-      // Mode create: geometri wajib
       if (!picker?.lineString) {
         alert("Klik peta untuk menggambar rute (minimal 2 waypoint)");
         return;
@@ -407,7 +371,6 @@ function RuteCrud({ onChanged }) {
     try { await api.deleteRute(id); await reload(); onChanged?.(); }
     catch (err) { alert(err.message); }
   }
-
 
   const panjangKmEstimasi = useMemo(() => {
     if (!picker?.lineString) return null;
@@ -429,144 +392,137 @@ function RuteCrud({ onChanged }) {
   return (
     <div className="admin-grid-layout">
       <div className="admin-left-col">
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <h3 style={{ margin: 0 }}>
+        <div className="admin-section-header">
+          <h3>
             {isEdit
-              ? <><IconEdit size={16} /> Edit Rute #{editing}</>
-              : <><IconPlus size={16} /> Tambah Rute Baru</>}
+              ? <><IconEdit size={18} /> Edit Rute #{editing}</>
+              : <><IconPlus size={18} /> Tambah Rute Baru</>}
           </h3>
-          <span style={{
-            background: "#1a1a1a", 
-            color: "#f59e0b", 
-            padding: "4px 10px",
-            borderRadius: 12, 
-            fontSize: ".8rem", 
-            display: "inline-flex", 
-            alignItems: "center", 
-            gap: 4,
-            boxShadow: "inset 3px 3px 6px rgba(0, 0, 0, 0.4), inset -3px -3px 6px rgba(40, 40, 40, 0.05)",
-          }}>
-            <IconBarChart size={12} /> Rute tersedia: <b>{list.length}</b>
-          </span>
-          <RefreshButton onClick={reload} loading={loading} />
+          <div className="admin-header-actions">
+            <span className="admin-stat-badge">
+              <IconBarChart size={14} /> Rute tersedia: <b>{list.length}</b>
+            </span>
+            <RefreshButton onClick={reload} loading={loading} />
+          </div>
         </div>
 
         <ErrorBox error={error} onRetry={reload} />
 
-        <form onSubmit={onSubmit} style={{ background: "var(--bg-secondary)", padding: 16, borderRadius: 16, marginTop: 12, marginBottom: 16, boxShadow: "var(--shadow-outer)" }}>
+        <form onSubmit={onSubmit} className="admin-form-card">
           {panjangKmEstimasi && (
-            <div style={{ 
-              margin: "8px 0", 
-              fontSize: ".85rem", 
-              color: "var(--accent-color)", 
-              display: "flex", 
-              alignItems: "center", 
-              gap: 6 
-            }}>
-              <IconRuler size={14} /> Panjang rute baru: <b>{panjangKmEstimasi} km</b> ·
-              {" "}<b>{picker.lineString.coordinates.length}</b> titik geometri ·
-              {" "}<b>{picker.waypoints?.length || 0}</b> waypoint
+            <div className="admin-rute-estimation">
+              <IconRuler size={16} /> 
+              <span>Estimasi: <b>{panjangKmEstimasi} km</b></span>
+              <span className="dot-divider">•</span>
+              <span><b>{picker.lineString.coordinates.length}</b> titik</span>
+              <span className="dot-divider">•</span>
+              <span><b>{picker.waypoints?.length || 0}</b> waypoint</span>
             </div>
           )}
 
-          <div className="form-grid" style={{ marginTop: 12 }}>
-            <div>
-              <label style={{ color: "var(--text-secondary)", fontSize: ".8rem", display: "block", marginBottom: 4 }}>Kode Trayek</label>
-              <input required maxLength={10} style={{ width: "100%", padding: 8, background: "var(--bg-secondary)", color: "var(--text-primary)", border: "none", borderRadius: 10, boxShadow: "var(--shadow-inner)" }}
-                placeholder="K05" value={form.kode_trayek}
-                onChange={(e) => setForm({ ...form, kode_trayek: e.target.value.toUpperCase() })} />
+          <div className="form-grid">
+            <div className="form-group">
+              <label className="admin-form-label">Kode Trayek</label>
+              <input 
+                required 
+                maxLength={10} 
+                className="admin-form-input text-uppercase"
+                placeholder="Misal: K01" 
+                value={form.kode_trayek}
+                onChange={(e) => setForm({ ...form, kode_trayek: e.target.value.toUpperCase() })} 
+              />
             </div>
-            <div>
-              <label style={{ color: "var(--text-secondary)", fontSize: ".8rem", display: "block", marginBottom: 4 }}>Warna Highlight</label>
-              <input type="color" style={{ width: "100%", padding: 2, height: 38, background: "var(--bg-secondary)", border: "none", borderRadius: 10, boxShadow: "var(--shadow-inner)", cursor: "pointer" }}
-                value={form.warna_peta}
-                onChange={(e) => setForm({ ...form, warna_peta: e.target.value })} />
+            <div className="form-group">
+              <label className="admin-form-label">Warna Rute</label>
+              <div className="color-picker-wrapper">
+                <input 
+                  type="color" 
+                  className="admin-form-color"
+                  value={form.warna_peta}
+                  onChange={(e) => setForm({ ...form, warna_peta: e.target.value })} 
+                />
+                <span className="color-value">{form.warna_peta}</span>
+              </div>
             </div>
-            <div className="full">
-              <label style={{ color: "var(--text-secondary)", fontSize: ".8rem", display: "block", marginBottom: 4 }}>Nama Trayek</label>
-              <input required maxLength={150} style={{ width: "100%", padding: 8, background: "var(--bg-secondary)", color: "var(--text-primary)", border: "none", borderRadius: 10, boxShadow: "var(--shadow-inner)" }}
-                placeholder="Rute 05 (Awal - Akhir)" value={form.nama_trayek}
-                onChange={(e) => setForm({ ...form, nama_trayek: e.target.value })} />
+            <div className="full form-group">
+              <label className="admin-form-label">Nama Trayek</label>
+              <input 
+                required 
+                maxLength={150} 
+                className="admin-form-input"
+                placeholder="Misal: Pandau - Pelita Pantai" 
+                value={form.nama_trayek}
+                onChange={(e) => setForm({ ...form, nama_trayek: e.target.value })} 
+              />
             </div>
           </div>
 
-          <button type="submit"
-            disabled={!isEdit && !picker?.lineString}
-            style={{
-              background: "var(--bg-secondary)",
-              color: (isEdit || picker?.lineString) ? "var(--accent-color)" : "var(--text-muted)",
-              padding: "10px 18px", border: 0, borderRadius: 12, fontWeight: 600,
-              cursor: (isEdit || picker?.lineString) ? "pointer" : "not-allowed",
-              display: "inline-flex", alignItems: "center", gap: 6,
-              boxShadow: "var(--shadow-outer-sm)",
-              opacity: (!isEdit && !picker?.lineString) ? 0.5 : 1,
-            }}>
-            {isEdit
-              ? <><IconEdit size={14} /> Simpan Perubahan</>
-              : <><IconPlus size={14} /> Simpan Rute Baru</>}
-          </button>
-          {isEdit && (
-            <button type="button" onClick={onCancel}
-              style={{ marginLeft: 8, background: "var(--bg-secondary)", color: "var(--text-secondary)", padding: "10px 18px", border: 0, borderRadius: 12, display: "inline-flex", alignItems: "center", gap: 6, boxShadow: "var(--shadow-outer-sm)" }}>
-              <IconXCircle size={14} /> Batal
+          <div className="admin-form-actions">
+            <button 
+              type="submit"
+              disabled={!isEdit && !picker?.lineString}
+              className={`admin-btn-primary ${(!isEdit && !picker?.lineString) ? "disabled" : ""}`}
+            >
+              {isEdit ? <><IconEdit size={16} /> Simpan Perubahan</> : <><IconPlus size={16} /> Simpan Rute Baru</>}
             </button>
-          )}
+            {isEdit && (
+              <button type="button" onClick={onCancel} className="admin-btn-secondary">
+                <IconXCircle size={16} /> Batal
+              </button>
+            )}
+          </div>
         </form>
 
-        <h3>Daftar Rute ({list.length})</h3>
+        <div className="admin-table-header">
+          <h3>Daftar Rute Tersimpan ({list.length})</h3>
+        </div>
+
         {list.length === 0 ? (
-          <div className="warning-box" style={{
-            padding: 12, 
-            fontSize: ".85rem", 
-            display: "flex", 
-            alignItems: "flex-start", 
-            gap: 8,
-          }}>
-            <IconAlert size={16} />
-            <span>Tabel rute kosong. Klik <b>Refresh</b> atau jalankan migrasi/seeder backend.</span>
+          <div className="warning-box trip-alert warning">
+            <IconAlert size={16} style={{flexShrink:0, marginTop:2}} />
+            <span>Tabel rute kosong. Klik <b>Refresh</b> atau jalankan migrasi backend.</span>
           </div>
         ) : (
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Kode</th><th>Nama Trayek</th><th>Panjang</th><th>Warna</th><th>Aksi</th></tr>
-            </thead>
-            <tbody>
-              {list.map((r) => (
-                <tr key={r.id_rute} style={editing === r.id_rute ? { background: "#2a2a2a" } : {}}>
-                  <td>{r.id_rute}</td>
-                  <td><b>{r.kode_trayek}</b></td>
-                  <td>{r.nama_trayek}</td>
-                  <td>{r.panjang_km != null ? `${r.panjang_km} km` : "—"}</td>
-                  <td>
-                    <span style={{ display: "inline-block", width: 24, height: 12, background: r.warna_peta, borderRadius: 3 }} />
-                    <span style={{ marginLeft: 6, fontFamily: "monospace", fontSize: ".75rem" }}>{r.warna_peta}</span>
-                  </td>
-                  <td>
-                    <div className="actions">
-                      <button onClick={() => onEdit(r)} style={{ 
-                        background: "#1a1a1a", 
-                        color: "#3b82f6",
-                        display: "inline-flex", 
-                        alignItems: "center", 
-                        gap: 3 
-                      }}>
-                        <IconEdit size={12} /> Edit
-                      </button>
-                      <button onClick={() => onDelete(r.id_rute)} style={{ 
-                        background: "#1a1a1a", 
-                        color: "#ef4444",
-                        display: "inline-flex", 
-                        alignItems: "center", 
-                        gap: 3 
-                      }}>
-                        <IconTrash size={12} /> Hapus
-                      </button>
-                    </div>
-                  </td>
+          <div className="admin-table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Kode</th>
+                  <th>Nama Trayek</th>
+                  <th>Panjang</th>
+                  <th>Warna</th>
+                  <th>Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {list.map((r) => (
+                  <tr key={r.id_rute} className={editing === r.id_rute ? "editing-row" : ""}>
+                    <td>{r.id_rute}</td>
+                    <td><strong>{r.kode_trayek}</strong></td>
+                    <td>{r.nama_trayek}</td>
+                    <td>{r.panjang_km != null ? `${r.panjang_km} km` : <span className="text-muted">—</span>}</td>
+                    <td>
+                      <div className="color-cell">
+                        <span className="color-swatch" style={{ background: r.warna_peta }} />
+                        <span className="coord-cell">{r.warna_peta}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="actions">
+                        <button onClick={() => onEdit(r)} className="admin-table-action edit">
+                          <IconEdit size={14} /> Edit
+                        </button>
+                        <button onClick={() => onDelete(r.id_rute)} className="admin-table-action delete">
+                          <IconTrash size={14} /> Hapus
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
