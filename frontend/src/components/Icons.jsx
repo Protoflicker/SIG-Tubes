@@ -309,3 +309,5 @@ export const IconEyeOff = (p) => (
     <line x1="2" y1="2" x2="22" y2="22" />
   </Svg>
 );
+
+export const IconArrowLeft = (p) => (<Svg {...p}><path d="M19 12H5M12 19l-7-7 7-7" /></Svg>);

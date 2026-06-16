@@ -4,7 +4,7 @@ import Sidebar from "./components/Sidebar.jsx";
 import AdminPanel from "./components/AdminPanel.jsx";
 import LandingPage from "./components/LandingPage.jsx";
 import { api, setToken } from "./api.js";
-import { IconMenu, IconX, IconSun, IconMoon, IconLogOut } from "./components/Icons.jsx";
+import { IconMenu, IconX, IconSun, IconMoon, IconLogOut, IconBus } from "./components/Icons.jsx";
 
 export default function App() {
   const [view, setView]               = useState("landing");
@@ -161,13 +161,14 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="topbar-brand">
-          <h1>
-            <span className="live-dot" title="Sistem Aktif" />
-            WebGIS Trans Metro
-            <span className="tag">SIG ITERA</span>
-          </h1>
-        </div>
+          <div className="topbar-brand" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <IconBus size={24} color="var(--accent-color)" />
+            <h1 style={{ display: "flex", alignItems: "center" }}>
+              <span className="live-dot" title="Sistem Aktif" />
+              WebGIS Trans Metro Pekanbaru
+              <span className="tag">SIG ITERA</span>
+            </h1>
+          </div>
         <nav className="nav">
           <button className={view === "map" ? "active" : ""}   onClick={() => setView("map")}>Peta</button>
           {!isAdmin && (
