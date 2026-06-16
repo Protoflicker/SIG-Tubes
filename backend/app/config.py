@@ -1,4 +1,9 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Selalu baca .env dari folder backend/, bukan dari working directory.
+# Ini mencegah fallback ke database localhost jika uvicorn dijalankan dari root.
+_ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
 
 class Settings(BaseSettings):
@@ -9,7 +14,7 @@ class Settings(BaseSettings):
     # Comma-separated origins. "*" untuk allow all (set di Vercel kalau perlu).
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
+    model_config = SettingsConfigDict(env_file=str(_ENV_FILE), case_sensitive=False, extra="ignore")
 
     @property
     def cors_origins_list(self) -> list[str]:
@@ -18,3 +23,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
