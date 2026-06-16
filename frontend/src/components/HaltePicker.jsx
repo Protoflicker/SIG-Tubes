@@ -1,15 +1,15 @@
-/**
- * HaltePicker — peta interaktif untuk memilih koordinat halte.
+﻿/**
+ * HaltePicker â€” peta interaktif untuk memilih koordinat halte.
  *
  * Mode bebas (restrictToRuteId = null):
- *   - Klik di mana saja → marker biru muncul, koordinat ter-isi
+ *   - Klik di mana saja â†’ marker biru muncul, koordinat ter-isi
  *   - Tombol "Gunakan Lokasi GPS Saya" memanggil browser geolocation
  *
  * Mode dibatasi (restrictToRuteId = N):
  *   - Rute terpilih DIHIGHLIGHT tebal & biru terang di atas peta
  *   - Rute lain redup (opacity rendah) sebagai konteks
- *   - Klik di area rute ter-highlight → marker SNAP ke titik terdekat di garis rute
- *   - Klik di luar toleransi (200 m) → DITOLAK, muncul peringatan
+ *   - Klik di area rute ter-highlight â†’ marker SNAP ke titik terdekat di garis rute
+ *   - Klik di luar toleransi (200 m) â†’ DITOLAK, muncul peringatan
  *   - Tombol GPS juga divalidasi dengan aturan yang sama
  */
 import { useEffect, useMemo, useState } from "react";
@@ -27,7 +27,7 @@ const blueIcon = new L.Icon({
 });
 
 const PEKANBARU_CENTER = [0.5071, 101.4478];
-const TOLERANSI_METER  = 200;   // klik dianggap "di rute" jika ≤ 200 m
+const TOLERANSI_METER  = 200;   // klik dianggap "di rute" jika â‰¤ 200 m
 
 // ---------- Geometri helpers (point-to-polyline snap) ----------
 function metersBetween(p1, p2) {
@@ -189,9 +189,9 @@ export default function HaltePicker({
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "12px 16px", background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-color)", margin: 0, fontSize: ".85rem", gap: 8, flexWrap: "wrap",
+        padding: "12px 16px", background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-color)", margin: 0, fontSize: ".85rem", gap: 8, flexWrap: "nowrap",
       }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           <IconMousePointer size={16} color="#1e3a8a" />
           {restrictGeom
             ? <><b>Klik pada rute biru</b> (highlight) untuk pilih halte.</>
@@ -216,7 +216,7 @@ export default function HaltePicker({
         }}>
           <span style={{ width: 14, height: 4, background: "#1e3a8a", borderRadius: 2 }} />
           Mode terbatas: hanya dapat menambah halte pada rute{" "}
-          <b>{restrictMeta.kode_trayek} — {restrictMeta.nama_trayek}</b>{" "}
+          <b>{restrictMeta.kode_trayek} â€” {restrictMeta.nama_trayek}</b>{" "}
           (toleransi {TOLERANSI_METER} m).
         </div>
       )}
@@ -273,3 +273,4 @@ export default function HaltePicker({
     </div>
   );
 }
+

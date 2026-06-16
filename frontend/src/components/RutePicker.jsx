@@ -1,4 +1,4 @@
-﻿/**
+/**
  * RutePicker â€” multi-waypoint snap-to-road via OSRM.
  *
  * Cara kerja:
@@ -134,24 +134,22 @@ export default function RutePicker({
       {/* === Instruksi & status === */}
       <div style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
-        padding: "12px 16px", background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-color)", margin: 0, fontSize: ".85rem", flexWrap: "wrap", gap: 6,
+        padding: "12px 16px", background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-color)", margin: 0, fontSize: ".85rem", flexWrap: "nowrap", gap: 6,
       }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {waypoints.length === 0 && (
             <><IconFlag size={14} color="#16a34a" /> <b>Klik peta</b> untuk menentukan <b style={{ color: "#16a34a" }}>Titik Awal</b></>
           )}
           {waypoints.length === 1 && (
-            <><IconFlag size={14} color="#dc2626" /> <b>Klik peta lagi</b> untuk menentukan <b style={{ color: "#dc2626" }}>Titik Akhir</b> (atau waypoint berikutnya)</>
+            <><IconFlag size={14} color="#dc2626" /> <b>Klik peta lagi</b> untuk menentukan <b style={{ color: "#dc2626" }}>Titik Akhir</b></>
           )}
           {waypoints.length >= 2 && lineString && (
             <>
               <IconCheckCircle size={14} color="#16a34a" />
-              Rute terbentuk Â· {waypoints.length} waypoint Â·
-              {" "}<b>{lineString.coordinates.length}</b> titik geometri.
-              {" "}Klik lagi untuk tambah waypoint, atau <b>Undo / Reset</b>.
+              <b>{waypoints.length}</b> Waypoint | <b>{lineString.coordinates.length}</b> Titik Geometri
             </>
           )}
-          {busy && <span style={{ marginLeft: 8, color: "#1e3a8a", display: "inline-flex", alignItems: "center", gap: 4 }}><IconLoader size={14} /> OSRMâ€¦</span>}
+          {busy && <span style={{ marginLeft: 8, color: "#1e3a8a", display: "inline-flex", alignItems: "center", gap: 4 }}><IconLoader size={14} /> Loading...</span>}
         </span>
         <div style={{ display: "flex", gap: 6 }}>
           {waypoints.length > 0 && (
