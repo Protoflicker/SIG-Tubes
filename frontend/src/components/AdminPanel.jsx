@@ -12,30 +12,32 @@ export default function AdminPanel({ onChanged }) {
 
   return (
     <div className="admin">
-      <div className="admin-header">
-        <h2>Panel Administrasi</h2>
-        <p>Kelola data Halte dan Rute Trans Metro Pekanbaru</p>
-      </div>
+      <div className="admin-inner">
+        <div className="admin-header">
+          <h2>Panel Administrasi</h2>
+          <p>Kelola data Halte dan Rute Trans Metro Pekanbaru</p>
+        </div>
 
-      <div className="admin-tabs">
-        <button 
-          onClick={() => setTab("halte")} 
-          className={`admin-tab-btn ${tab === "halte" ? "active" : ""}`}
-        >
-          <IconBus size={16} /> Halte
-        </button>
-        <button 
-          onClick={() => setTab("rute")}  
-          className={`admin-tab-btn ${tab === "rute" ? "active" : ""}`}
-        >
-          <IconRoute size={16} /> Rute
-        </button>
-      </div>
+        <div className="admin-tabs">
+          <button 
+            onClick={() => setTab("halte")} 
+            className={`admin-tab-btn ${tab === "halte" ? "active" : ""}`}
+          >
+            <IconBus size={16} /> Halte
+          </button>
+          <button 
+            onClick={() => setTab("rute")}  
+            className={`admin-tab-btn ${tab === "rute" ? "active" : ""}`}
+          >
+            <IconRoute size={16} /> Rute
+          </button>
+        </div>
 
-      <div className="admin-content">
-        {tab === "halte"
-          ? <HalteCrud onChanged={onChanged} />
-          : <RuteCrud  onChanged={onChanged} />}
+        <div className="admin-content">
+          {tab === "halte"
+            ? <HalteCrud onChanged={onChanged} />
+            : <RuteCrud  onChanged={onChanged} />}
+        </div>
       </div>
     </div>
   );

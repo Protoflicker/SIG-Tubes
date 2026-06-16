@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import ConfirmModal from "./ConfirmModal.jsx";
 import {
   IconMousePointer, IconLocateFixed, IconXCircle, IconMapPin,
@@ -68,7 +68,7 @@ export default function Sidebar({
             className={`mode-btn ${mode === "trip" ? "active" : ""}`}
             onClick={() => onChangeMode && onChangeMode("trip")}
           >
-            <IconNavigation size={14} /> Rute AÃ¢â€ â€™B
+            <IconNavigation size={14} /> Rute A-B
           </button>
         </div>
       </div>
@@ -142,7 +142,7 @@ export default function Sidebar({
                   {radiusResult.halte.map((h) => (
                     <li key={h.id_halte} onClick={() => onHalteClick?.(h)}>
                       <div><b>{h.nama_halte}</b> <span className={badgeClass(h.kondisi_fisik)}>{h.kondisi_fisik}</span></div>
-                      <div className="muted">{h.kode_trayek || "Ã¢â‚¬â€"} Ã‚Â· {Math.round(h.jarak_meter)} m</div>
+                      <div className="muted">{h.kode_trayek || "ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â"} Ãƒâ€šÃ‚Â· {Math.round(h.jarak_meter)} m</div>
                     </li>
                   ))}
                 </ul>
@@ -192,7 +192,7 @@ export default function Sidebar({
 
           {tripResult && !tripLoading && (
             <>
-              {/* Timeline: A Ã¢â€ â€™ B */}
+              {/* Timeline: A ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ B */}
               <div className="trip-result">
                 <div className="trip-leg">
                   <span className="trip-dot" data-dot="A" style={{ background: "#10b981" }}>A</span>
@@ -219,7 +219,7 @@ export default function Sidebar({
                 </div>
               </div>
 
-              {/* Stats Ã¢â‚¬â€ di luar trip-result agar tidak dipotong garis vertikal */}
+              {/* Stats ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â di luar trip-result agar tidak dipotong garis vertikal */}
               <div className="trip-stats-wrapper">
                 <div className="trip-stats">
                   <div className="trip-stat">
@@ -293,6 +293,7 @@ export default function Sidebar({
     </>
   );
 }
+
 
 
 

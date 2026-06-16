@@ -429,12 +429,16 @@ input, select, textarea { font-family: inherit; transition: all 0.3s ease; }
 
 /* ===== Admin panel ===== */
 .admin {
-  padding: 24px 4vw;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   background: var(--bg-primary);
   height: 100%;
+  width: 100%;
+}
+.admin-inner {
   max-width: 1600px;
   margin: 0 auto;
+  padding: 24px 4vw;
 }
 .admin h2 { margin-top: 0; color: var(--text-primary); }
 .admin table {
@@ -1866,8 +1870,7 @@ input[type=range].custom-range::-moz-range-track {
 }
 
 .admin-table-container {
-  max-height: 400px;
-  overflow-y: auto;
+  
   background: var(--bg-secondary);
   border-radius: 16px;
   box-shadow: var(--shadow-outer-sm), 0 0 0 1px var(--border-color);
@@ -2085,3 +2088,6 @@ input[type=range].custom-range::-moz-range-track {
   filter: brightness(1.1);
   transform: translateY(-2px);
 }
+
+
+
