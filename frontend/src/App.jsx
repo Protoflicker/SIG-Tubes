@@ -164,7 +164,6 @@ export default function App() {
           <div className="topbar-brand" style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <IconBus size={24} color="var(--accent-color)" />
             <h1 style={{ display: "flex", alignItems: "center" }}>
-              <span className="live-dot" title="Sistem Aktif" />
               WebGIS Trans Metro Pekanbaru
               <span className="tag">SIG ITERA</span>
             </h1>
