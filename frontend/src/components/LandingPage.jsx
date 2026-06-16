@@ -1,17 +1,17 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { api } from "../api.js";
 import {
   IconLock, IconUser, IconChevronRight,
   IconLoader, IconAlert, IconEye, IconEyeOff, IconMapPin, IconSearch, IconRoute, IconArrowLeft
 } from "./Icons.jsx";
 
-export default function LandingPage({ onEnterUser, onEnterAdmin }) {
+export default function LandingPage({ onEnterUser, onEnterAdmin, forceAdmin = false }) {
   const [username, setUsername]       = useState("");
   const [password, setPassword]       = useState("");
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [showLogin, setShowLogin]     = useState(false);
+  const [showLogin, setShowLogin]     = useState(forceAdmin);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -120,7 +120,7 @@ export default function LandingPage({ onEnterUser, onEnterAdmin }) {
             ) : (
               <div className="landing-admin" style={{ animation: "cardFadeIn 0.4s ease-out" }}>
                 
-                <h2 style={{ fontSize: "1.4rem", fontWeight: 800, marginBottom: "8px", color: "var(--text-primary)", textAlign: "center" }}>Admin Panel</h2>
+                <h2 style={{ fontSize: "1.4rem", fontWeight: 800, marginBottom: "8px", color: "var(--text-primary)", textAlign: "center" }}>Welcome back Admin!</h2>
                 <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginBottom: "32px", textAlign: "center" }}>Login to manage bus routes and stops operations.</p>
 
                 <form onSubmit={handleLogin} className="login-form">
@@ -137,7 +137,7 @@ export default function LandingPage({ onEnterUser, onEnterAdmin }) {
                       required
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      style={{ background: "var(--bg-primary)", padding: "14px 14px 14px 44px", borderRadius: "12px" }}
+                      style={{ background: "transparent", padding: 0, border: "none", outline: "none", flex: 1 }}
                     />
                   </div>
                   <div className="input-group" style={{ marginBottom: "28px" }}>
@@ -148,7 +148,7 @@ export default function LandingPage({ onEnterUser, onEnterAdmin }) {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      style={{ background: "var(--bg-primary)", padding: "14px 44px 14px 44px", borderRadius: "12px" }}
+                      style={{ background: "transparent", padding: 0, border: "none", outline: "none", flex: 1 }}
                     />
                     <button
                       type="button"
@@ -156,7 +156,7 @@ export default function LandingPage({ onEnterUser, onEnterAdmin }) {
                       style={{
                         background: "transparent", border: "none",
                         color: "var(--text-secondary)", cursor: "pointer",
-                        padding: 0, display: "flex", position: "absolute", right: "16px", top: "50%", transform: "translateY(-50%)"
+                        padding: 0, display: "flex", flexShrink: 0
                       }}
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >

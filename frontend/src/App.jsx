@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import MapView from "./components/MapView.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import AdminPanel from "./components/AdminPanel.jsx";
@@ -120,7 +120,7 @@ export default function App() {
     setTripA(null); setTripB(null); setTripResult(null);
   }
 
-  /** Klik peta utama — perilaku tergantung mode aktif */
+  /** Klik peta utama â€” perilaku tergantung mode aktif */
   function handleMapClick({ lat, lng }) {
     if (mode === "trip") {
       if (!tripA || (tripA && tripB)) {
@@ -149,9 +149,11 @@ export default function App() {
     setView("landing");
   }
 
-  if (view === "landing") {
+  if (view === "landing" || view === "login") {
     return (
       <LandingPage 
+        key={view}
+        forceAdmin={view === "login"}
         onEnterUser={() => setView("map")} 
         onEnterAdmin={() => { setIsAdmin(true); setView("admin"); }} 
       />
@@ -172,7 +174,7 @@ export default function App() {
         <nav className="nav">
           <button className={view === "map" ? "active" : ""}   onClick={() => setView("map")}>Peta</button>
           {!isAdmin && (
-            <button onClick={() => setView("landing")} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--bg-secondary)', color: 'var(--accent-color)', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', fontWeight: 600 }}>
+            <button onClick={() => setView("login")} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--bg-secondary)', color: 'var(--accent-color)', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border-color)', cursor: 'pointer', fontWeight: 600 }}>
               Login Admin
             </button>
           )}
@@ -256,3 +258,4 @@ export default function App() {
     </div>
   );
 }
+
