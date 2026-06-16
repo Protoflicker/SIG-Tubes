@@ -1,5 +1,5 @@
-/**
- * RutePicker — multi-waypoint snap-to-road via OSRM.
+﻿/**
+ * RutePicker â€” multi-waypoint snap-to-road via OSRM.
  *
  * Cara kerja:
  *   - Klik di peta untuk menambah waypoint berurutan.
@@ -8,12 +8,13 @@
  *     mengikuti jalan raya valid.
  *   - Marker (pin) HANYA tampil di waypoint pertama (hijau "AWAL") dan
  *     waypoint terakhir (merah "AKHIR"). Waypoint tengah tidak digambar
- *     sebagai marker — hanya tergambar sebagai bagian dari polyline.
+ *     sebagai marker â€” hanya tergambar sebagai bagian dari polyline.
  *
  * Output `value`:
  *   { waypoints: [{lat,lng}, ...], lineString: GeoJSON | null }
  */
 import { useEffect, useState } from "react";
+import ConfirmModal from "./ConfirmModal.jsx";
 import {
   MapContainer, TileLayer, Marker, Polyline, Tooltip, useMap, useMapEvents,
 } from "react-leaflet";
@@ -85,6 +86,7 @@ export default function RutePicker({
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr]   = useState(null);
+  const [showReset, setShowReset] = useState(false);
 
   const waypoints = value?.waypoints ?? [];
   const lineString = value?.lineString;
@@ -117,7 +119,7 @@ export default function RutePicker({
     recompute(waypoints.slice(0, -1));
   }
 
-  // GeoJSON [lng,lat] → Leaflet [lat,lng]
+  // GeoJSON [lng,lat] â†’ Leaflet [lat,lng]
   const polyline = lineString
     ? lineString.coordinates.map(([lng, lat]) => [lat, lng])
     : null;
@@ -127,11 +129,12 @@ export default function RutePicker({
   const endPoint   = waypoints.length >= 2 ? waypoints[waypoints.length - 1] : null;
 
   return (
-    <div>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <ConfirmModal isOpen={showReset} title="Reset Pembuatan Rute?" message="Seluruh titik waypoint yang belum disimpan akan dihapus dari peta." onCancel={() => setShowReset(false)} onConfirm={() => { setShowReset(false); onReset(); }} />
       {/* === Instruksi & status === */}
       <div style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
-        marginBottom: 6, fontSize: ".85rem", flexWrap: "wrap", gap: 6,
+        padding: "12px 16px", background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-color)", margin: 0, fontSize: ".85rem", flexWrap: "wrap", gap: 6,
       }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
           {waypoints.length === 0 && (
@@ -143,12 +146,12 @@ export default function RutePicker({
           {waypoints.length >= 2 && lineString && (
             <>
               <IconCheckCircle size={14} color="#16a34a" />
-              Rute terbentuk · {waypoints.length} waypoint ·
+              Rute terbentuk Â· {waypoints.length} waypoint Â·
               {" "}<b>{lineString.coordinates.length}</b> titik geometri.
               {" "}Klik lagi untuk tambah waypoint, atau <b>Undo / Reset</b>.
             </>
           )}
-          {busy && <span style={{ marginLeft: 8, color: "#1e3a8a", display: "inline-flex", alignItems: "center", gap: 4 }}><IconLoader size={14} /> OSRM…</span>}
+          {busy && <span style={{ marginLeft: 8, color: "#1e3a8a", display: "inline-flex", alignItems: "center", gap: 4 }}><IconLoader size={14} /> OSRMâ€¦</span>}
         </span>
         <div style={{ display: "flex", gap: 6 }}>
           {waypoints.length > 0 && (
@@ -157,7 +160,7 @@ export default function RutePicker({
               <IconUndo size={14} /> Undo
             </button>
           )}
-          <button type="button" onClick={onReset}
+          <button type="button" onClick={() => setShowReset(true)}
             style={{ background: "#6b7280", color: "white", border: 0, padding: "6px 10px", borderRadius: 6, fontSize: ".8rem", display: "inline-flex", alignItems: "center", gap: 4 }}>
             <IconXCircle size={14} /> Reset
           </button>
@@ -177,20 +180,20 @@ export default function RutePicker({
           display: "flex", gap: 6, alignItems: "center",
         }}>
           <IconInfo size={14} />
-          <span>Mode edit — garis abu-abu menampilkan geometri rute saat ini.
+          <span>Mode edit â€” garis abu-abu menampilkan geometri rute saat ini.
           Klik peta untuk <b>menggambar ulang</b> rute, atau biarkan kosong jika geometri tidak ingin diubah.</span>
         </div>
       )}
 
-      <div className="map-container-wrapper" style={{ height, borderRadius: 8, overflow: "hidden", border: "1px solid #e5e7eb" }}>
-        <MapContainer center={PEKANBARU_CENTER} zoom={12} scrollWheelZoom style={{ height: "100%", width: "100%", cursor: "crosshair" }}>
+      <div className="map-container-wrapper" style={{ flex: 1, position: "relative", borderRadius: 8, overflow: "hidden", border: "1px solid #e5e7eb" }}>
+        <MapContainer center={PEKANBARU_CENTER} zoom={13} style={{ height: "100%", width: "100%" }}>
           <TileLayer
             attribution='&copy; OpenStreetMap | Routing: OSRM'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <ClickHandler onClick={handleMapClick} />
 
-          {/* Reference geometry (mode edit) — warna mengikuti warna_peta */}
+          {/* Reference geometry (mode edit) â€” warna mengikuti warna_peta */}
           {referenceLineString && (
             <FitToReference geometry={referenceLineString} />
           )}
@@ -207,13 +210,13 @@ export default function RutePicker({
             />
           ))}
 
-          {/* Marker AWAL — hanya 1 */}
+          {/* Marker AWAL â€” hanya 1 */}
           {startPoint && (
             <Marker position={[startPoint.lat, startPoint.lng]} icon={greenIcon}>
               <Tooltip permanent direction="top" offset={[0, -38]}>AWAL</Tooltip>
             </Marker>
           )}
-          {/* Marker AKHIR — hanya 1 */}
+          {/* Marker AKHIR â€” hanya 1 */}
           {endPoint && (
             <Marker position={[endPoint.lat, endPoint.lng]} icon={redIcon}>
               <Tooltip permanent direction="top" offset={[0, -38]}>AKHIR</Tooltip>
@@ -224,8 +227,9 @@ export default function RutePicker({
           {polyline && (
             <Polyline positions={polyline} pathOptions={{ color: "#1e3a8a", weight: 6, opacity: 0.85 }} />
           )}
-        </MapContainer>
+          </MapContainer>
       </div>
     </div>
   );
 }
+

@@ -32,10 +32,10 @@ const TOLERANSI_METER  = 200;   // klik dianggap "di rute" jika ≤ 200 m
 // ---------- Geometri helpers (point-to-polyline snap) ----------
 function metersBetween(p1, p2) {
   const R = 6371000;
-  const φ1 = p1.lat * Math.PI / 180, φ2 = p2.lat * Math.PI / 180;
-  const dφ = (p2.lat - p1.lat) * Math.PI / 180;
-  const dλ = (p2.lng - p1.lng) * Math.PI / 180;
-  const a = Math.sin(dφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(dλ/2)**2;
+  const phi1 = p1.lat * Math.PI / 180, phi2 = p2.lat * Math.PI / 180;
+  const dphi = (p2.lat - p1.lat) * Math.PI / 180;
+  const dlambda = (p2.lng - p1.lng) * Math.PI / 180;
+  const a = Math.sin(dphi/2)**2 + Math.cos(phi1)*Math.cos(phi2)*Math.sin(dlambda/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
@@ -186,10 +186,10 @@ export default function HaltePicker({
   };
 
   return (
-    <div>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        marginBottom: 6, fontSize: ".85rem", gap: 8, flexWrap: "wrap",
+        padding: "12px 16px", background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-color)", margin: 0, fontSize: ".85rem", gap: 8, flexWrap: "wrap",
       }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
           <IconMousePointer size={16} color="#1e3a8a" />
@@ -221,7 +221,7 @@ export default function HaltePicker({
         </div>
       )}
 
-      <div className="map-container-wrapper" style={{ height, borderRadius: 8, overflow: "hidden", border: "1px solid #e5e7eb", position: "relative" }}>
+      <div className="map-container-wrapper" style={{ flex: 1, position: "relative" }}>
         <MapContainer
           center={value ? [value.lat, value.lng] : PEKANBARU_CENTER}
           zoom={value ? 15 : 12}
@@ -255,20 +255,20 @@ export default function HaltePicker({
           {restrictGeom && <FitToGeometry geometry={restrictGeom} />}
 
           {value && <Marker position={[value.lat, value.lng]} icon={blueIcon} />}
-        </MapContainer>
 
-        {warning && (
-          <div style={{
-            position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)",
-            background: "#fee2e2", color: "#991b1b",
-            padding: "8px 14px", borderRadius: 8, fontSize: ".82rem",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.2)", zIndex: 1000,
-            maxWidth: "85%", display: "flex", alignItems: "center", gap: 6,
-            border: "1px solid #fca5a5",
-          }}>
-            <IconAlert size={16} /> {warning}
-          </div>
-        )}
+          {warning && (
+            <div style={{
+              position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)",
+              background: "#fee2e2", color: "#991b1b",
+              padding: "8px 14px", borderRadius: 8, fontSize: ".82rem",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.2)", zIndex: 1000,
+              maxWidth: "85%", display: "flex", alignItems: "center", gap: 6,
+              border: "1px solid #fca5a5",
+            }}>
+              <IconAlert size={16} /> {warning}
+            </div>
+          )}
+        </MapContainer>
       </div>
     </div>
   );

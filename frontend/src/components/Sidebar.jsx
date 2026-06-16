@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ConfirmModal from "./ConfirmModal.jsx";
 import {
   IconMousePointer, IconLocateFixed, IconXCircle, IconMapPin,
   IconLayers, IconRoute, IconBus, IconAlert, IconSearch, IconLoader,
@@ -23,6 +24,7 @@ export default function Sidebar({
   onResetTrip, onHalteClick,
 }) {
   const [loadingGPS, setLoadingGPS] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   function handleGPS() {
     if (!navigator.geolocation) {
@@ -49,7 +51,8 @@ export default function Sidebar({
   }
 
   return (
-    <aside className={`sidebar ${className}`}>
+    <>
+      <aside className={`sidebar ${className}`}>
       {/* ===== Pemilih Mode ===== */}
       <div className="card">
         <div className="mode-switch">
@@ -65,7 +68,7 @@ export default function Sidebar({
             className={`mode-btn ${mode === "trip" ? "active" : ""}`}
             onClick={() => onChangeMode && onChangeMode("trip")}
           >
-            <IconNavigation size={14} /> Rute A→B
+            <IconNavigation size={14} /> Rute AÃ¢â€ â€™B
           </button>
         </div>
       </div>
@@ -139,7 +142,7 @@ export default function Sidebar({
                   {radiusResult.halte.map((h) => (
                     <li key={h.id_halte} onClick={() => onHalteClick?.(h)}>
                       <div><b>{h.nama_halte}</b> <span className={badgeClass(h.kondisi_fisik)}>{h.kondisi_fisik}</span></div>
-                      <div className="muted">{h.kode_trayek || "—"} · {Math.round(h.jarak_meter)} m</div>
+                      <div className="muted">{h.kode_trayek || "Ã¢â‚¬â€"} Ã‚Â· {Math.round(h.jarak_meter)} m</div>
                     </li>
                   ))}
                 </ul>
@@ -176,7 +179,7 @@ export default function Sidebar({
           </div>
 
           {(tripA || tripB) && (
-            <button type="button" className="btn btn-reset-trip" style={{ marginTop: 12, width: "100%" }} onClick={onResetTrip}>
+            <button type="button" className="btn btn-reset-trip" style={{ marginTop: 12, width: "100%" }} onClick={() => setShowResetConfirm(true)}>
               <IconXCircle size={14} /> Reset Titik Asal & Tujuan
             </button>
           )}
@@ -189,7 +192,7 @@ export default function Sidebar({
 
           {tripResult && !tripLoading && (
             <>
-              {/* Timeline: A → B */}
+              {/* Timeline: A Ã¢â€ â€™ B */}
               <div className="trip-result">
                 <div className="trip-leg">
                   <span className="trip-dot" data-dot="A" style={{ background: "#10b981" }}>A</span>
@@ -216,7 +219,7 @@ export default function Sidebar({
                 </div>
               </div>
 
-              {/* Stats — di luar trip-result agar tidak dipotong garis vertikal */}
+              {/* Stats Ã¢â‚¬â€ di luar trip-result agar tidak dipotong garis vertikal */}
               <div className="trip-stats-wrapper">
                 <div className="trip-stats">
                   <div className="trip-stat">
@@ -286,5 +289,12 @@ export default function Sidebar({
         </div>
       </div>
     </aside>
+      <ConfirmModal isOpen={showResetConfirm} title="Reset Perjalanan?" message="Titik Asal (A) dan Tujuan (B) beserta garis rute akan dihapus dari peta." onCancel={() => setShowResetConfirm(false)} onConfirm={() => { setShowResetConfirm(false); onResetTrip(); }} />
+    </>
   );
 }
+
+
+
+
+

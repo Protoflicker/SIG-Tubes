@@ -385,9 +385,9 @@ function RuteCrud({ onChanged }) {
     for (let i = 1; i < c.length; i++) {
       const [lng1, lat1] = c[i-1], [lng2, lat2] = c[i];
       const R = 6371000;
-      const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
-      const dφ = (lat2-lat1) * Math.PI / 180, dλ = (lng2-lng1) * Math.PI / 180;
-      const a = Math.sin(dφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(dλ/2)**2;
+      const phi1 = lat1 * Math.PI / 180, phi2 = lat2 * Math.PI / 180;
+      const dphi = (lat2-lat1) * Math.PI / 180, dlambda = (lng2-lng1) * Math.PI / 180;
+      const a = Math.sin(dphi/2)**2 + Math.cos(phi1)*Math.cos(phi2)*Math.sin(dlambda/2)**2;
       m += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
     return (m/1000).toFixed(2);
