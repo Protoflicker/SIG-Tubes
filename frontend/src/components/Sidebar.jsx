@@ -92,7 +92,13 @@ export default function Sidebar({
             <input type="range" min="100" max="5000" step="50"
                    className="custom-range"
                    style={{ backgroundSize: `${((radius - 100) * 100) / 4900}% 100%` }}
-                   value={radius} onChange={(e) => onChangeRadius(parseInt(e.target.value, 10))} />
+                   value={radius}
+                   onInput={(e) => {
+                     // Update visual fill LANGSUNG (zero-delay) saat thumb digeser
+                     const pct = ((e.target.value - 100) * 100) / 4900;
+                     e.target.style.backgroundSize = `${pct}% 100%`;
+                   }}
+                   onChange={(e) => onChangeRadius(parseInt(e.target.value, 10))} />
 
             <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
               <button type="button" className="btn btn-secondary" onClick={handleGPS} disabled={loadingGPS}>
@@ -230,8 +236,8 @@ export default function Sidebar({
                   </div>
                 </div>
 
-                <div className={`trip-alert ${tripResult.satu_koridor ? "success" : "warning"}`}>
-                  <IconFlag size={16} style={{ marginTop: 2, flexShrink: 0 }} color={tripResult.satu_koridor ? "#10b981" : "#f59e0b"} />
+              <div className={`trip-alert ${tripResult.satu_koridor ? "success" : "warning"}`}>
+                  <IconFlag size={16} style={{ marginTop: 2, flexShrink: 0 }} color={tripResult.satu_koridor ? "#10b981" : "var(--accent-color)"} />
                   <span>{tripResult.catatan}</span>
                 </div>
               </div>

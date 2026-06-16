@@ -1279,4 +1279,4 @@ input[type=range].custom-range::-moz-range-track {
   border-left: 4px solid var(--accent-color);
 }
 .trip-alert.success { border-left-color: #10b981; }
-.trip-alert.warning { border-left-color: #f59e0b; }
+.trip-alert.warning { border-left-color: var(--accent-color); }
